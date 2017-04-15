@@ -422,12 +422,14 @@ defaultproperties
      Skins(0)=Texture'2009DoomMonstersTex.Guardian.GuardianTongue'
      Skins(1)=Texture'2009DoomMonstersTex.Guardian.GuardianSkin'
      Skins(2)=Shader'2009DoomMonstersTex.Guardian.GuardianShader'
-     CollisionRadius=70.000000
-     CollisionHeight=100.000000
+     CollisionRadius=26
+     CollisionHeight=44
      bUseExtendedCollision=True
-     ColOffset=(X=32.000000,Z=92.000000)
-     ColRadius=120.000000
-     ColHeight=100.000000     
+     ColOffset=(X=20,Z=60)
+     ColRadius=150.000000
+     ColHeight=80.000000
      Mass=10000.000000
      HeadRadius=40.000000
+     DrawScale=0.8
+     PrePivot=(Z=8)
 }

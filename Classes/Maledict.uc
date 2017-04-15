@@ -7,22 +7,22 @@ var transient float NextChargeSound,NextRangedAttack;
 var vector ForgottenPos;
 var bool bSoulIsOK;
 
+var transient ExtendedHeadCollision MyHeadCollision;
+
 simulated function PostBeginPlay()
 {
-    bUseExtendedCollision = false;
     super.PostBeginPlay();
-    
+
     if ( Role == ROLE_Authority ) {
         // use ExtendedZCollision for the head detection
         bUseExtendedCollision = true;
-        MyExtCollision = Spawn(class 'ExtendedZCollision',self);
-        MyExtCollision.SetCollisionSize(ColRadius,ColHeight);
-        MyExtCollision.bHardAttach = true;
-        AttachToBone(MyExtCollision, HeadBone);
-        SavedExtCollision = MyExtCollision.bCollideActors;
+        MyHeadCollision = Spawn(class 'ExtendedHeadCollision',self);
+        MyHeadCollision.SetCollisionSize(HeadRadius,HeadRadius*2);
+        MyHeadCollision.bHardAttach = true;
+        AttachToBone(MyHeadCollision, HeadBone);
     }
-    
 }
+
 function RangedAttack(Actor A)
 {
 	if ( bShotAnim )
@@ -41,12 +41,12 @@ function RangedAttack(Actor A)
 			NextRangedAttack = Level.TimeSeconds - 1;
 		}
 	}
-	
+
 	if( NextRangedAttack<Level.TimeSeconds )
 	{
 		if (MaxMeleeAttacks <= 0)
 			MaxMeleeAttacks = rand(default.MaxMeleeAttacks+1);
-			
+
 		NextRangedAttack = Level.TimeSeconds+2+FRand()*4.f;
 		if( FRand()<0.25f )
 			return;
@@ -267,7 +267,7 @@ defaultproperties
      AirSpeed=500.000000
      HealthMax=4000.000000
      Health=4000
-     HeadRadius=24.000000
+     HeadRadius=50
      MenuName="Maledict"
      bPhysicsAnimUpdate=False
      MovementAnims(0)="GlideIdle"
@@ -326,11 +326,11 @@ defaultproperties
      Skins(3)=Shader'2009DoomMonstersTex.Maledict.MaledictTeethShader'
      Skins(4)=Texture'2009DoomMonstersTex.Maledict.MaledictNewTongue'
 	 MaxMeleeAttacks=2
-     
+
      CollisionRadius=60.000000
      CollisionHeight=50.000000
-     
-     bUseExtendedCollision=False
-     ColRadius=25
-     ColHeight=50
+
+     bUseExtendedCollision=True
+     ColRadius=180
+     ColHeight=100
 }

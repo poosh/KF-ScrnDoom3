@@ -166,10 +166,6 @@ defaultproperties
      HasHitAnims=True
      BurnAnimTime=0.150000
      MeleeDamage=35
-     bUseExtendedCollision=True
-     ColOffset=(Z=29.000000)
-     ColRadius=25.000000
-     ColHeight=28.000000
      PlayerCountHealthScale=0.100000
      FootStep(0)=Sound'2009DoomMonstersSounds.ZombieSoundSet02.step1'
      FootStep(1)=Sound'2009DoomMonstersSounds.ZombieSoundSet02.step2'
@@ -260,7 +256,12 @@ defaultproperties
      TransientSoundVolume=2.000000
      CollisionRadius=20.000000
      CollisionHeight=44 // 45
-     
+
+     bUseExtendedCollision=True
+     ColOffset=(X=20,Z=29)
+     ColRadius=35
+     ColHeight=35
+
      ZapThreshold=0.75
      ZappedDamageMod=1.5
 }

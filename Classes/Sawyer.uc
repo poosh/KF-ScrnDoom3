@@ -132,8 +132,14 @@ defaultproperties
      Skins(2)=TexPanner'2009DoomMonstersTex.Sawyer.ChainPanner'
      Skins(3)=Texture'2009DoomMonstersTex.Sawyer.SawyerChainsaw'
      Skins(4)=Texture'2009DoomMonstersTex.Revenant.InvisMat'
-     CollisionRadius=18
+     CollisionRadius=20
      CollisionHeight=44 //50
+
+     bUseExtendedCollision=True
+     ColOffset=(X=10,Z=38)
+     ColRadius=25
+     ColHeight=20
+
 
      MotionDetectorThreat=0.50 //5.14
      ZappedDamageMod=1.5

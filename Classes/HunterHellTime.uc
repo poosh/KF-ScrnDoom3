@@ -433,11 +433,16 @@ defaultproperties
      HeadBone="Jaw"
      AmbientSound=Sound'2009DoomMonstersSounds.Hunter.Hunter_helltime_flight1'
      Mesh=SkeletalMesh'2009DoomMonstersAnims.HunterHellTimeMesh'
-     DrawScale=1.200000
+     DrawScale=1.0
      Skins(0)=Texture'2009DoomMonstersTex.HunterHellTime.HunterHellTimeMeat'
      Skins(1)=Combiner'2009DoomMonstersTex.HunterHellTime.JHunterHellTimeSkin'
      SoundVolume=168
      SoundRadius=400.000000
-     CollisionRadius=35.000000
-     CollisionHeight=60.000000
+     CollisionRadius=26
+     CollisionHeight=44
+
+     bUseExtendedCollision=True
+     ColOffset=(Z=30.000000)
+     ColRadius=60
+     ColHeight=60
 }

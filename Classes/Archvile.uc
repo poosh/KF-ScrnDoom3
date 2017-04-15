@@ -26,10 +26,10 @@ function RangedAttack(Actor A)
 	else {
 		if (MaxMeleeAttacks <= 0)
 			MaxMeleeAttacks = rand(default.MaxMeleeAttacks+1);
-	
+
 		if( nextFireAttackTime<Level.TimeSeconds )
 		{
-				
+
 			nextFireAttackTime = Level.TimeSeconds+2.f+FRand()*5.f;
 			if( FRand()<0.25f )
 				return;
@@ -199,7 +199,7 @@ defaultproperties
      MeleeAnims(2)="Attack3"
      MeleeDamage=30
      bUseExtendedCollision=True
-     ColOffset=(Z=35.000000)
+     ColOffset=(X=20,Z=35)
      ColRadius=30.000000
      ColHeight=30.000000
      PlayerCountHealthScale=0.100000

@@ -5,7 +5,7 @@
 class Doom3Mutator extends Mutator
 	Config(Doom3KF);
 
-const VERSION = 92000;
+const VERSION = 94000;
 var localized string strVersion;
 
 var config float MinDoomPct,MaxDoomPct;
@@ -15,12 +15,11 @@ var float WaveSpawnRate;
 var transient int SquadCounter;
 var config float MinSpawnDelay,MaxSpawnDelay;
 var config float BossWaveReduction,BossWaveRate,BossStartWaves,BossPerPlayerHP,PatBossMult;
-var config bool bSpawnSuperMonsters;
+var config bool bSpawnMonsters, bSpawnSuperMonsters;
 var config array<string> LargeMaps,LargeBosses,NormalBosses,MonsterClasses,PatReplacement,LargePatReplacement;
 var bool bBigMap;
 
-var bool bHasInit;
-var int SuperMonWave,LastScannedWave;
+var int LastScannedWave;
 var array< class<KFMonster> > Bosses,Doom3Mobs;
 var KFGameType KF;
 var float ProgressPct;
@@ -29,7 +28,7 @@ var const array< class<Actor> > PrecacheClasses;
 
 var Doom3GameRules GameRules;
 
-   
+
 static function string GetVersionStr()
 {
     local String msg, s;
@@ -42,13 +41,13 @@ static function string GetVersionStr()
     s = String(int(v%100));
     if ( len(s) == 1 )
         s = "0" $ s;
-    if ( sub_v > 0 ) 
+    if ( sub_v > 0 )
         s @= "(BETA "$sub_v$")";
     ReplaceText(msg, "%n", s);
-    
+
     s = String(v/100);
     ReplaceText(msg, "%m",s);
-    
+
     return msg;
 }
 
@@ -72,10 +71,10 @@ function PostBeginPlay()
     }
     else {
         log("Unable to spawn Game Rules!", class.outer.name);
-    }	
+    }
     class'ScrnDoom3KF.Doom3Controller'.default.TeleportDestinations.length = 0; // reset navigation points
 
-    
+
     bBigMap = false;
     if( LargeMaps.Length>0 ) {
         for( i=(LargeMaps.Length-1); i>=0; --i )
@@ -104,7 +103,7 @@ function PostBeginPlay()
     }
     // new squad system
     KF.MonsterCollection.default.EndGameBossClass = KF.EndGameBossClass;
-    
+
     // MID-GAME BOSSES
     if( bSpawnSuperMonsters ) {
         for( i=0; i<NormalBosses.Length; ++i ) {
@@ -117,7 +116,7 @@ function PostBeginPlay()
                 M = LoadClass(LargeBosses[i]);
                 if( M!=None )
                     Bosses[Bosses.Length] = M;
-            }    
+            }
         }
     }
 
@@ -129,6 +128,9 @@ function PostBeginPlay()
     }
 
     SetTimer(3,true);
+
+    if (bSpawnMonsters)
+        GotoState('AddingD3Squads');
 }
 final function class<KFMonster> LoadClass( string S )
 {
@@ -138,22 +140,19 @@ final function class<KFMonster> LoadClass( string S )
 }
 function Timer()
 {
-	if( !bHasInit )
-	{
-		bHasInit = true;
-		SuperMonWave = (KF.FinalWave*BossStartWaves);
-	}
-	if( LastScannedWave!=KF.WaveNum )
-	{
-		if( !KF.bWaveInProgress )
-			return;
-		if( KF.WaveNum<KF.FinalWave )
-			ProgressPct = FClamp(float(KF.WaveNum+2)/float(KF.FinalWave),0.1f,1.f);
-		else 
-            ProgressPct = 2.f;
+	if( KF.bWaveInProgress && LastScannedWave != KF.WaveNum ) {
 		LastScannedWave = KF.WaveNum;
-		if( bSpawnSuperMonsters && FRand()<BossWaveRate && KF.WaveNum>=SuperMonWave && KF.WaveNum<KF.FinalWave )
+
+		if( KF.WaveNum < KF.FinalWave )
+			ProgressPct = FClamp(float(KF.WaveNum+2)/float(KF.FinalWave),0.1f,1.f);
+		else
+            ProgressPct = 2.f;
+
+		if( bSpawnSuperMonsters && KF.WaveNum < KF.FinalWave
+                && KF.WaveNum > (KF.FinalWave*BossStartWaves-0.001) && FRand() < BossWaveRate )
+        {
 			TryToAddBoss();
+        }
 	}
 }
 final function rotator GetRandDir()
@@ -246,7 +245,7 @@ static event string GetDescriptionText(string PropName)
     return Super.GetDescriptionText(PropName);
 }
 
-Auto state AddingD3Squads
+state AddingD3Squads
 {
 	function AddDoom3Mobs(byte MaxAmmount)
 	{
@@ -267,25 +266,25 @@ Auto state AddingD3Squads
             if ( KF.LastZVol != none )
                 KF.LastSpawningVolume = KF.LastZVol;
             // prevent adding doom mobs twice in the same squad
-            SquadCounter = KF.SquadsToUse.Length; 
+            SquadCounter = KF.SquadsToUse.Length;
         }
 	}
-    
+
 Begin:
 	while( ProgressPct<=1.f && !KF.bGameEnded ) {
         if ( !KF.bWaveInProgress || KF.TotalMaxMonsters <= 0 ) {
             sleep(1.0);
             continue;
         }
-    
+
         WaveSpawnRate = KF.KFLRules.WaveSpawnPeriod / KF.KFLRules.default.WaveSpawnPeriod;
         if ( DoomPct < MinDoomPct && KF.WaveNum > 0 ) {
             // not enough doom monsters - spawn as fast as possible
             AddDoom3Mobs(2+rand(3));
-            Sleep(MinSpawnDelay * fmax(1.0, WaveSpawnRate)); 
+            Sleep(MinSpawnDelay * fmax(1.0, WaveSpawnRate));
         }
         else if ( DoomPct > MaxDoomPct && KF.WaveNum > 0 ) {
-            Sleep(MaxSpawnDelay); 
+            Sleep(MaxSpawnDelay);
             // too many doom monsters - do a maximum cooldown
             AddDoom3Mobs(1);
             Sleep(MinSpawnDelay);
@@ -303,15 +302,15 @@ function GetServerDetails( out GameInfo.ServerResponseLine ServerState )
 	local int i;
 
     super.GetServerDetails(ServerState);
-    
+
 	i = ServerState.ServerInfo.Length;
 	ServerState.ServerInfo.insert(i, 2);
-    
+
 	ServerState.ServerInfo[i].Key = "Doom 3 Bosses";
 	ServerState.ServerInfo[i++].Value = Eval(bSpawnSuperMonsters,"True","False");
-    
+
 	ServerState.ServerInfo[i].Key = "Doom 3 Version";
-	ServerState.ServerInfo[i++].Value = GetVersionStr();    
+	ServerState.ServerInfo[i++].Value = GetVersionStr();
 }
 
 function bool CheckReplacement(Actor Other, out byte bSuperRelevant)
@@ -352,7 +351,7 @@ function Mutate(string MutateString, PlayerController Sender)
             $ ", " $ string(DoomPct*100)$"%");
 
     super.Mutate(MutateString, Sender);
-    
+
     if ( MutateString ~= "version" )
         Sender.ClientMessage(FriendlyName @ GetVersionStr());
 }
@@ -407,6 +406,8 @@ defaultproperties
     BossStartWaves=0.400000
     BossPerPlayerHP=0.75
     PatBossMult=2.5
+    LastScannedWave=-1;
+    bSpawnMonsters=true
     bSpawnSuperMonsters=True
     LargeMaps(0)="KF-WestLondon"
     LargeMaps(1)="KF-Manor"

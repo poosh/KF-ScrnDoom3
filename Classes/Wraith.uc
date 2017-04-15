@@ -193,6 +193,7 @@ defaultproperties
      GroundSpeed=350.000000
      AirSpeed=100.000000
      HealthMax=280.000000
+     HeadBone="head_FK"
      Health=280
      HeadRadius=12.000000
      MenuName="Wraith"
@@ -250,6 +251,6 @@ defaultproperties
      CollisionHeight=35.000000
 
      MotionDetectorThreat=0.50 //5.14
-     
+
      ZappedDamageMod=1.5
 }

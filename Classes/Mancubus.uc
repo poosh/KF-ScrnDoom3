@@ -32,7 +32,7 @@ function RangedAttack(Actor A)
 	{
 		if (MaxMeleeAttacks <= 0)
 			MaxMeleeAttacks = 1 + rand(default.MaxMeleeAttacks+1);
-			
+
 		if( MultiFires==0 )
 			MultiFires = 1+Rand(2);
 		else if( --MultiFires==0 )
@@ -155,7 +155,7 @@ defaultproperties
      GroundSpeed=85.000000
      HealthMax=1600.000000
      Health=1600
-     HeadRadius=16.000000
+     HeadRadius=20
      MenuName="Mancubus"
      MovementAnims(0)="Walk"
      MovementAnims(1)="Walk"

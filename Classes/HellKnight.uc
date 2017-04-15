@@ -25,7 +25,7 @@ function RangedAttack(Actor A)
 	else if( IsInMeleeRange(A) && (MaxMeleeAttacks > 0 || NextRangedTime >= Level.TimeSeconds) )
 	{
 		MaxMeleeAttacks--;
-				
+
 		i = Rand(3);
 		if( i==1 )
 			PrepareMovingAttack(A,0.45);
@@ -134,7 +134,7 @@ defaultproperties
      MeleeDamage=35
      bFatAss=True
      bUseExtendedCollision=True
-     ColOffset=(Z=49.000000)
+     ColOffset=(X=30,Z=60)
      ColRadius=40.000000
      ColHeight=40.000000
      PlayerCountHealthScale=0.20

@@ -262,14 +262,14 @@ defaultproperties
      CollisionHeight=44 //50
      bUseExtendedCollision=True
      ColOffset=(Y=-1,Z=24)
-     ColRadius=42.000000
-     ColHeight=40.000000     
-     
-    HeadBone="Rtbrain" //7.00   
+     ColRadius=50
+     ColHeight=40.000000
+
+    HeadBone="Rtbrain" //7.00
     HeadBone2="Lftbrain" //8.11
     HeadOffset=(Z=-5)
     HeadRadius=12
-    
+
     ZapThreshold=0.75
-    ZappedDamageMod=1.5    
+    ZappedDamageMod=1.5
 }

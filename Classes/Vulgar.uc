@@ -323,12 +323,12 @@ defaultproperties
      CollisionRadius=20.000000
      CollisionHeight=30.000000
      bUseExtendedCollision=True
-     ColOffset=(Z=20)
-     ColRadius=20
-     ColHeight=40.000000          
-     
+     ColOffset=(Z=30)
+     ColRadius=25
+     ColHeight=40.000000
+
      MotionDetectorThreat=0.50 //5.14
-     
+
      ZapThreshold=0.75
      ZappedDamageMod=1.5
 }

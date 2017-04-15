@@ -34,8 +34,8 @@ function RangedAttack(Actor A)
 	else if( NextProjTime<Level.TimeSeconds || MultiAttackTime>Level.TimeSeconds )
 	{
 		if (MaxMeleeAttacks <= 0)
-			MaxMeleeAttacks = rand(default.MaxMeleeAttacks+1);	
-	
+			MaxMeleeAttacks = rand(default.MaxMeleeAttacks+1);
+
 		if( MultiAttackTime>Level.TimeSeconds )
 			NextProjTime = Level.TimeSeconds+4.f;
 		else
@@ -210,7 +210,8 @@ defaultproperties
      HeadBone="organic_head"
      AmbientSound=Sound'2009DoomMonstersSounds.Sabaoth.Sabaoth_Walk'
      Mesh=SkeletalMesh'2009DoomMonstersAnims.SabaothMesh'
-     DrawScale=1.200000
+     DrawScale=1.0
+     PrePivot=(Z=5)
      Skins(0)=Shader'2009DoomMonstersTex.Sabaoth.Gear2Shader'
      Skins(1)=Shader'2009DoomMonstersTex.Sabaoth.Gear2Shader'
      Skins(2)=Shader'2009DoomMonstersTex.Sabaoth.Gear3Shader'
@@ -220,13 +221,13 @@ defaultproperties
      Skins(6)=Texture'2009DoomMonstersTex.Sabaoth.BFGSkin'
      Skins(7)=Shader'2009DoomMonstersTex.Sabaoth.SabaothEyesShader'
      Skins(8)=Shader'2009DoomMonstersTex.Sabaoth.SabaothEyesShader'
-     
+
      CollisionRadius=26 //44
      CollisionHeight=40 // 60
      bUseExtendedCollision=True
      ColOffset=(Z=30.000000)
-     ColRadius=60.000000
-     ColHeight=65.000000
+     ColRadius=80
+     ColHeight=80
 
      Mass=6000.000000
      RotationRate=(Yaw=100000)

@@ -266,7 +266,7 @@ defaultproperties
      GroundSpeed=120.000000
      HealthMax=1000.000000
      Health=1000
-     HeadRadius=14.000000
+     HeadRadius=16
      MenuName="Bruiser"
      MovementAnims(0)="Walk"
      MovementAnims(1)="Walk"

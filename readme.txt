@@ -1,19 +1,28 @@
 ------------------------------------------------------------------------------
 Further development of KF-Doom3 Monsters mod
 (c) PooSH, 2012-2014
-Contact via Steam: [ScrN]PooSH 
+Contact via Steam: [ScrN]PooSH
 ------------------------------------------------------------------------------
 === CREDITS ==================================================================
 ------------------------------------------------------------------------------
   Original mod's author - Marco
     http://forums.tripwireinteractive.com/showthread.php?t=51253
-  This mod is a port and heavily modified from Unreal Tournament 2004's Doom 3 
+  This mod is a port and heavily modified from Unreal Tournament 2004's Doom 3
   monsters pack by INIQUITOUS
 ------------------------------------------------------------------------------
 
 
 
 Changes made by [ScrN]PooSH:
+------------------------------------------------------------------------------
+v9.40
+------------------------------------------------------------------------------
+- Doom Bosses made smaller.
+- Added bSpawnMonsters to Doom3KF.ini allowing to turn off doom3 monster spawning
+  for ScrN Waves.
+- Fixed headshot detection algorithm.
+- Fixed headshots of almost every Doom3 Monster.
+
 ------------------------------------------------------------------------------
 v9.20
 ------------------------------------------------------------------------------
@@ -89,7 +98,7 @@ Maggot:
 ------------------------------------------------------------------------------
 v8.10
 ------------------------------------------------------------------------------
-Lowered collision radius of several monsters. They may clip though walls now, 
+Lowered collision radius of several monsters. They may clip though walls now,
 but at least they won't stuck so much.
 Karma file auto detection can be configured now (same as FemaleFP).
 Fixed bug when boss death didn't trigger achievements.
@@ -97,7 +106,7 @@ Fixed bug when boss death didn't trigger achievements.
 ------------------------------------------------------------------------------
 v7.25
 ------------------------------------------------------------------------------
-Windows clients check for Doom3Karma.ka file and enable/disable karma ragdoll 
+Windows clients check for Doom3Karma.ka file and enable/disable karma ragdoll
 animations depending of its existence.
 
 
@@ -193,7 +202,7 @@ Fixed huge bug - players didn't get any money for killing doom monsters!
 
 Using of ragdoll death animation reverted to the original (Beta4). Ragdolls
 must be enabled on the client side (in Doom3KF.ini). Client must have doom3
-monsters pack installed on his system to view proper death animations 
+monsters pack installed on his system to view proper death animations
 (must have KarmaData\Doom3Karma.ka file).
 
 Pat Replacement: if Boss looses > 10% HP during five seconds, extra squad will
@@ -207,7 +216,7 @@ Fat Zombie's ground speed raised to Clot's speed (105)
 Boney's speed raised to 100 (up to 65)
 Changed Revenant's shooting policy:
 	When full of health he shoots rarer (extra 2s cooldown).
-	In normal conditions he shoots 1-2 rockets in a row 
+	In normal conditions he shoots 1-2 rockets in a row
 		(before was random from 1 to 4).
 	When raged (health < 75%) he shoots 1-4 rockets in a row
 		and moves x3.5 faster.
@@ -216,9 +225,9 @@ Changed Revenant's shooting policy:
 ------------------------------------------------------------------------------
 BETA 6:
 ------------------------------------------------------------------------------
-Big monsters' health now is scaled through the number of players. 
+Big monsters' health now is scaled through the number of players.
 Base health lowered /1.5 times, giving 10% hp per extra pleyer.
-So 5-player team will get same-health monsters as original, 
+So 5-player team will get same-health monsters as original,
 6+ players - slightly more hp, but small teams and soloers can kill them easier.
 Monsters with scaled health:
 Commando, Revenant, Bruiser, Archvile, Mancubus, HellKnight.
@@ -229,7 +238,7 @@ Bosses' health is scaled as before (controlled via config variable).
 BETA 5:
 ------------------------------------------------------------------------------
 + Made compatible with 1035 patch
-+ Sharpshooter receives normal headshot multiplier bonus for perked weapons 
++ Sharpshooter receives normal headshot multiplier bonus for perked weapons
   (not only 50% like it was in Doom3KFBeta4 + 1035)
 + Big doom monsters get 30% damage resistance from Xbow/M99 headshots on Sui/Hoe
   Resistance is applied to Bruiser, Archvile, Mancubus, HellKnight and all bosses
@@ -246,9 +255,9 @@ BOSSES:
     per player with same rate as health (BossPerPlayerHP)
 + Maledict's base health lowered to 4000 (down from 6000)
 + Changed PAT wave: now Doom Boss periodically will spawn demons to help him
-+ When Boss is spawning as Pat replacement, he receives extra 75% resistance 
++ When Boss is spawning as Pat replacement, he receives extra 75% resistance
     to fire DoT
-    
+
 
 BURNING MECHANISM CHANGED:
 Zeds require significantly more damage to ignite, but when do, they receive
@@ -261,8 +270,8 @@ DAMAGE PER TICK:
 MAC10: 53 (constant)
 Other weapons: ((base damage * 1.5) + 27) * (firebug damage bonus)
 For example level 6 firebug flamer's tick damage is 72.
-Tick count is lowered to 8 (down from 10), but each next fire damage received will 
+Tick count is lowered to 8 (down from 10), but each next fire damage received will
 continue burning (reset tick count back to 8 again).
-Burn continuation is possible only when dealing the same or higher fire damage, 
+Burn continuation is possible only when dealing the same or higher fire damage,
 e.g. you can't keep zed burning with shooting with MAC10 after flame nade.
 

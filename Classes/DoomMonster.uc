@@ -468,7 +468,6 @@ simulated function Destroyed()
 
 function Died(Controller Killer, class<DamageType> damageType, vector HitLocation)
 {
-	local Controller C;
 	local Doom3Controller D3C;
 
 	if( SpawnFactory!=None )
@@ -496,16 +495,6 @@ function Died(Controller Killer, class<DamageType> damageType, vector HitLocatio
 	if( bWasBossPat )
 	{
 		KFGameType(Level.Game).DoBossDeath();
-		For( C=Level.ControllerList; C!=None; C=C.NextController )
-		{
-			if( PlayerController(C)!=None )
-			{
-				PlayerController(C).SetViewTarget(Self);
-				PlayerController(C).ClientSetViewTarget(Self);
-				PlayerController(C).bBehindView = true;
-				PlayerController(C).ClientSetBehindView(True);
-			}
-		}
 	}
 }
 
@@ -937,7 +926,6 @@ function TakeDamage(int Damage, Pawn instigatedBy, Vector hitlocation, Vector mo
 	local KFPlayerReplicationInfo KFPRI;
 	local float HeadShotScale;
     local string msg;
-    local int BlockSlip;
 	local class<KFWeaponDamageType> KFDamType;
 
     LastDamagedBy = instigatedBy;
@@ -994,14 +982,17 @@ function TakeDamage(int Damage, Pawn instigatedBy, Vector hitlocation, Vector mo
 			}
 		}
 
-		if ( KFDamType.default.bCheckForHeadShots )
-		{
-			HeadShotScale = 1.0;
+		if ( KFDamType.default.bCheckForHeadShots ) {
+            if ( HitIndex == 101 )
+                bLastHeadshot = true;
+            else {
+                HeadShotScale = 1.0;
 
-			// Do larger headshot checks if it is a melee attach
-			if( class<DamTypeMelee>(DamType) != none )
-				HeadShotScale *= 1.25;
-			bLastHeadshot = IsHeadShot(hitlocation, normal(momentum), HeadShotScale);
+                // Do larger headshot checks if it is a melee attach
+                if( class<DamTypeMelee>(DamType) != none )
+                    HeadShotScale *= 1.25;
+                bLastHeadshot = IsHeadShot(hitlocation, normal(momentum), HeadShotScale);
+            }
 		}
 
 		if ( KFPawn(instigatedBy) != none && instigatedBy.PlayerReplicationInfo != none )
@@ -1096,11 +1087,28 @@ function TakeDamage(int Damage, Pawn instigatedBy, Vector hitlocation, Vector mo
     }
 }
 
+/*
+                 BoneLoc
+                /|  --
+              /  |    \
+            /    |     >-- Distance
+    HitLoc/_ _ _ |  __/
+          HitNormal
+*/
+function bool CheckBoneHit(vector BoneLoc, float BoneRadius, vector HitLoc, vector HitNormal)
+{
+    local float cosA, A, Distance;
+
+    cosA = normal(BoneLoc - HitLoc) dot HitNormal;
+    A = acos(cosA);
+    Distance = sin(A) * vsize(BoneLoc - HitLoc);
+    return Distance < BoneRadius;
+}
+
 function bool IsHeadShot(vector loc, vector ray, float AdditionalScale)
 {
 	local coords C;
-	local vector HeadLoc, B, M, diff;
-	local float t, DotMM, Distance;
+	local vector HeadLoc;
 	local int look;
 	local bool bWasAnimating, bResult;
 
@@ -1108,24 +1116,22 @@ function bool IsHeadShot(vector loc, vector ray, float AdditionalScale)
 		return False;
 
 	// If we are a dedicated server estimate what animation is most likely playing on the client
-	if( Level.NetMode == NM_DedicatedServer && !bShotAnim )
-	{
+	if( Level.NetMode == NM_DedicatedServer && !bShotAnim ) {
 		if (Physics == PHYS_Falling)
 			PlayAnim(AirAnims[0], 1.0, 0.0);
-		else if( Physics == PHYS_Walking )
-		{
-			if( !IsAnimating(0) && !IsAnimating(1) )
-			{
+		else if( Physics == PHYS_Walking ) {
+			if( !IsAnimating(0) && !IsAnimating(1) ) {
 				if (bIsCrouched)
 					PlayAnim(IdleCrouchAnim, 1.0, 0.0);
 				else if( VSizeSquared(Acceleration)<150.f )
 					PlayAnim(IdleRestAnim, 1.0, 0.0);
-				else PlayAnim(MovementAnims[0], 1.0, 0.0);
+				else
+                    PlayAnim(MovementAnims[0], 1.0, 0.0);
 			}
-			else bWasAnimating = true;
+			else
+                bWasAnimating = true;
 
-			if ( bDoTorsoTwist )
-			{
+			if ( bDoTorsoTwist ) {
 				SmoothViewYaw = Rotation.Yaw;
 				SmoothViewPitch = ViewPitch;
 
@@ -1135,61 +1141,23 @@ function bool IsHeadShot(vector loc, vector ray, float AdditionalScale)
 				SetTwistLook(0, look);
 			}
 		}
-		else if( Physics == PHYS_Swimming && !bShotAnim )
+		else if( Physics == PHYS_Swimming && !bShotAnim ) {
 			PlayAnim(SwimAnims[0], 1.0, 0.0);
+        }
 		if( !bWasAnimating )
 			SetAnimFrame(0.5);
 	}
 	C = GetBoneCoords(HeadBone);
 	HeadLoc = C.Origin + (HeadHeight * HeadScale * AdditionalScale * C.XAxis)
-        + C.XAxis*HeadOffset.X + C.YAxis*HeadOffset.Y + C.ZAxis*HeadOffset.Z;
-
-	// Express snipe trace line in terms of B + tM
-	B = loc;
-	M = ray * (2.0 * CollisionHeight + 2.0 * CollisionRadius);
-
-	// Find Point-Line Squared Distance
-	diff = HeadLoc - B;
-	t = M Dot diff;
-	if (t > 0) {
-		DotMM = M dot M;
-		if (t < DotMM) {
-			t = t / DotMM;
-			diff = diff - (t * M);
-		}
-		else {
-			t = 1;
-			diff -= M;
-		}
-	}
-	else
-        t = 0;
-	Distance = Sqrt(diff Dot diff);
-	bResult = (Distance < (HeadRadius * HeadScale * AdditionalScale));
+        + (HeadOffset >> Rotation);
+    bResult = CheckBoneHit(HeadLoc, HeadRadius * HeadScale * AdditionalScale, loc, ray);
 
     if ( !bResult && HeadBone2 != '' ) {
         // second head
         C = GetBoneCoords(HeadBone2);
         HeadLoc = C.Origin + (HeadHeight * HeadScale * AdditionalScale * C.XAxis)
-            + C.XAxis*HeadOffset.X + C.YAxis*HeadOffset.Y + C.ZAxis*HeadOffset.Z;
-
-        diff = HeadLoc - B;
-        t = M Dot diff;
-        if (t > 0) {
-            DotMM = M dot M;
-            if (t < DotMM) {
-                t = t / DotMM;
-                diff = diff - (t * M);
-            }
-            else {
-                t = 1;
-                diff -= M;
-            }
-        }
-        else
-            t = 0;
-        Distance = Sqrt(diff Dot diff);
-        bResult = (Distance < (HeadRadius * HeadScale * AdditionalScale));
+            + (HeadOffset >> Rotation);
+        bResult = CheckBoneHit(HeadLoc, HeadRadius * HeadScale * AdditionalScale, loc, ray);
     }
 
     return bResult;

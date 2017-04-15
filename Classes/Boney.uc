@@ -77,10 +77,6 @@ defaultproperties
      BurnAnimTime=0.500000
      MeleeAnims(0)="MeleeAttack01"
      MeleeDamage=22
-     bUseExtendedCollision=True
-     ColOffset=(X=20.000000,Z=37.000000)
-     ColRadius=17.000000
-     ColHeight=20.000000
      FootStep(0)=Sound'2009DoomMonstersSounds.ZombieSoundSet02.step1'
      FootStep(1)=Sound'2009DoomMonstersSounds.ZombieSoundSet02.step2'
      DodgeSkillAdjust=1.000000
@@ -165,8 +161,15 @@ defaultproperties
      Skins(1)=Texture'2009DoomMonstersTex.Revenant.InvisMat'
      CollisionRadius=15.000000
      CollisionHeight=40.000000
-     
+
+     bUseExtendedCollision=True
+     ColOffset=(X=20.000000,Z=45)
+     ColRadius=17.000000
+     ColHeight=20.000000
+
+
      MotionDetectorThreat=0.26 //5.14
+     HeadRadius=9
      HeadOffset=(X=-1,Y=1,Z=0)
      ZappedDamageMod=2.0
      ZapThreshold=0.25

@@ -106,7 +106,7 @@ function RangedAttack(Actor A)
 	else if( IsInMeleeRange(A) && (MaxMeleeAttacks > 0 || NextRangedAttack >= Level.TimeSeconds) )
 	{
 		MaxMeleeAttacks--;
-		
+
 		if( !bIsInvulnerable && NextRangedAttack<Level.TimeSeconds )
 		{
 			RoamAtPlayer();
@@ -121,7 +121,7 @@ function RangedAttack(Actor A)
 	{
 		if (MaxMeleeAttacks <= 0)
 			MaxMeleeAttacks = rand(default.MaxMeleeAttacks+1);
-			
+
 		if( NumMultiFires==0 )
 		{
 			if( FRand()<0.75f )
@@ -393,9 +393,9 @@ defaultproperties
      MeleeDamage=20
      bFatAss=True
      bUseExtendedCollision=True
-     ColOffset=(Z=105.000000)
-     ColRadius=50.000000
-     ColHeight=70.000000
+     ColOffset=(Z=20,Y=0,Z=70)
+     ColRadius=70
+     ColHeight=70
      OnlineHeadshotOffset=(X=83.000000,Z=140.000000)
      FootStep(0)=Sound'2009DoomMonstersSounds.Hunter.Hunter_invul_fs_invul_01'
      FootStep(1)=Sound'2009DoomMonstersSounds.Hunter.Hunter_invul_fs_invul_02'
@@ -431,7 +431,7 @@ defaultproperties
      GroundSpeed=200.000000
      HealthMax=6500.000000
      Health=6500
-     HeadRadius=24.000000
+     HeadRadius=20
      MenuName="Invulnerability Hunter"
      MovementAnims(0)="Walk1"
      MovementAnims(1)="Walk1"
@@ -482,8 +482,8 @@ defaultproperties
      IdleChatAnim="Idle"
      HeadBone="HK_jaw_2"
      Mesh=SkeletalMesh'2009DoomMonstersAnims.HunterInvulnerableMesh'
-     DrawScale=1.5
-     PrePivot=(Z=48.000000)
+     DrawScale=1.0
+     PrePivot=(Z=15.000000)
      Skins(0)=Shader'2009DoomMonstersTex.HunterInvulnerable.HunterInvulFinalShader'
      Skins(1)=Texture'2009DoomMonstersTex.Revenant.InvisMat'
      CollisionRadius=26

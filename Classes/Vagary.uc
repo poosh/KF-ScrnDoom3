@@ -13,11 +13,11 @@ var byte PendingSpiders;
 function RangedAttack(Actor A)
 {
 	local float r;
-	
+
 	if ( bShotAnim )
 		return;
 
-    r = float(Health) / HealthMax;    
+    r = float(Health) / HealthMax;
     if ( PendingSpiders > 0 )
     {
 		PrepareStillAttack(A);
@@ -32,7 +32,7 @@ function RangedAttack(Actor A)
 	else if( IsInMeleeRange(A) && (MaxMeleeAttacks > 0 || NextRangedTime >= Level.TimeSeconds) )
 	{
 		MaxMeleeAttacks--;
-		
+
 		PrepareStillAttack(A);
 		SetAnimAction('Melee1');
 	}
@@ -40,20 +40,20 @@ function RangedAttack(Actor A)
 	{
 		if ( MaxMeleeAttacks <= 0)
 			MaxMeleeAttacks = rand(default.MaxMeleeAttacks+1);
-		
+
 		PrepareStillAttack(A);
-		
+
 		if ( frand() < 0.50 - 0.05*ChildMonsterCounter ) {
-            if ( r < 0.75 ) 
+            if ( r < 0.75 )
                 PendingSpiders = min(5, rand( int((1.0 - r) * 10) ));
 			SetAnimAction('RangedAttack2');
 			SpawnSpider(A);
 		}
 		else if( frand() < 0.5 )
 			SetAnimAction('RangedAttack2');
-		else 
+		else
 			SetAnimAction('RangedAttack1');
-		
+
         NextRangedTime = Level.TimeSeconds + 0.5 + 2.0*r + frand() * ( 1.5 + 1.5*r);
 
 		PlaySound(PreFireSound,SLOT_Misc,2,,500.f);
@@ -71,9 +71,9 @@ function SpawnSpider( Actor A )
 {
 	local vector NDir,Point,HL,HN;
 	local byte i;
-	
+
 	// try to spawn inside the arm first
-	Point = GetBoneCoords('Lmid1').Origin; 
+	Point = GetBoneCoords('Lmid1').Origin;
 	if ( ChildMonsterCounter < 16) {
 		SpiderProj = Spawn(MonsterProjClass,self,,Point,rotator(A.Location-Point));
 		// if can't spawn inside the arm, then look for some place around
@@ -93,15 +93,15 @@ function SpawnSpider( Actor A )
 					break;
 			}
 			SpiderProj = Spawn(MonsterProjClass,self,,Point,rotator(A.Location-Point));
-		}		
+		}
 	}
-	else 
+	else
 		SpiderProj = FindNearestSpider();
-	
+
 	if ( SpiderProj != none ) {
 		SpiderProj.SetCollision(false);
 		AttachToBone(SpiderProj, 'Lmid1');
-		SpiderThrowTime = Level.TimeSeconds + 0.55; 
+		SpiderThrowTime = Level.TimeSeconds + 0.55;
 		SpiderProj.Controller.Target = A;
 		SpiderProj.Controller.Enemy = Pawn(A);
 	}
@@ -111,7 +111,7 @@ function TriteFly FindNearestSpider()
 {
 	local TriteFly BestSpider, Spider;
 	local float MinDistanceSqared, DistanceSqared;
-	
+
 	foreach VisibleCollidingActors( class 'ScrnDoom3KF.TriteFly', Spider, 1000, Location ) {
 		DistanceSqared = VSizeSquared(Location - Spider.Location);
 		if ( DistanceSqared < 5625 )
@@ -148,7 +148,7 @@ simulated function Tick(float DeltaTime)
 			SpiderProj.SetCollision(true);
 			SpiderProj.bReleased = true;
 			SpiderProj = none;
-		}			
+		}
 	}
 }
 
@@ -172,7 +172,7 @@ final function SpawnProject( Actor A )
 		if( FastTrace(A.Location,Point+vect(0,0,100)) )
 			break;
 	}
-	
+
 	Spawn(RangedProjectile,,,Point,rotator(A.Location-Point));
 }
 simulated function FireProjectile()
@@ -307,7 +307,7 @@ defaultproperties
      GroundSpeed=250.000000
      HealthMax=7000
      Health=7000
-     HeadRadius=18.000000
+     HeadRadius=10
      MenuName="Vagary"
      MovementAnims(0)="Walk"
      MovementAnims(1)="Walk"
@@ -355,7 +355,8 @@ defaultproperties
      IdleRestAnim="Idle"
      IdleChatAnim="Idle"
      Mesh=SkeletalMesh'2009DoomMonstersAnims.VagaryMesh'
-     DrawScale=1.500000
+     DrawScale=1.0
+     PrePivot=(Z=-5)
      Skins(0)=Combiner'2009DoomMonstersTex.Vagary.JVagarySkin'
      Skins(1)=Shader'2009DoomMonstersTex.Vagary.TeethShader'
      Skins(2)=Shader'2009DoomMonstersTex.Vagary.VagarySacShader'

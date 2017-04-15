@@ -35,7 +35,7 @@ function RangedAttack(Actor A)
 {
 	if ( bShotAnim )
 		return;
-        
+
 	if( !bHasRoamed )
 	{
 		RoamAtPlayer();
@@ -290,13 +290,13 @@ simulated function BurnAway()
 function TakeDamage( int Damage, Pawn InstigatedBy, vector HitLocation, vector Momentum, class<DamageType> DamageType, optional int HitIndex )
 {
     local int OldHealth;
-    
+
     if ( Damage > 0) {
         if( !IsHeadShot(HitLocation,Normal(Momentum),1.f) )
             Damage *= 0.6; // 40% damage resistance
         else if( bLunging || Level.TimeSeconds < ChestOpenedUntil )
             Damage *= 2; // headshot in opened chest
-        else 
+        else
             Damage *= 0.8; // headshot in closed chest
     }
     OldHealth = Health;
@@ -351,7 +351,7 @@ function bool IsHeadShot(vector loc, vector ray, float AdditionalScale)
 	Distance = Sqrt(diff Dot diff);
     if ( bLunging )
         return Distance < 2.0 * HeadRadius * HeadScale * AdditionalScale;
-        
+
     return (Distance < (HeadRadius * HeadScale * AdditionalScale));
 }
 
@@ -399,11 +399,6 @@ defaultproperties
      MeleeAnims(1)="Attack3"
      MeleeDamage=15
      bFatAss=True
-     bUseExtendedCollision=True
-     ColOffset=(Z=94.000000)
-     ColRadius=35.000000
-     ColHeight=70.000000
-     OnlineHeadshotOffset=(X=37.000000,Z=54.000000)
      FootStep(0)=Sound'2009DoomMonstersSounds.HellKnight.HellKnight_step1'
      FootStep(1)=Sound'2009DoomMonstersSounds.HellKnight.HellKnight_step1'
      bBoss=True
@@ -486,15 +481,20 @@ defaultproperties
      IdleChatAnim="Idle"
      HeadBone="heart1"
      Mesh=SkeletalMesh'2009DoomMonstersAnims.HunterBerserkMesh'
-     DrawScale=1.5
-     PrePivot=(Z=26.000000)
+     DrawScale=1.0
+     PrePivot=(Z=5)
      Skins(0)=Combiner'2009DoomMonstersTex.HunterBerserk.JHunterBerserkSkin'
      Skins(1)=Texture'2009DoomMonstersTex.HunterBerserk.HunterBerserkClaws'
      Skins(2)=Shader'2009DoomMonstersTex.HunterBerserk.HunterBerserkHeartShader'
      CollisionRadius=26 //30
-     CollisionHeight=40 // 50
+     CollisionHeight=44 // 50
      Mass=2000.000000
-     
+     bUseExtendedCollision=True
+     ColOffset=(Z=60)
+     ColRadius=35
+     ColHeight=50
+     OnlineHeadshotOffset=(X=37,Z=36)
+
      ZapThreshold=5.0
      ZappedDamageMod=2.0
 }

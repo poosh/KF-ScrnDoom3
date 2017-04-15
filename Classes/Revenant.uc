@@ -32,7 +32,7 @@ function RangedAttack(Actor A)
 		}
 		else if( --MultiFiresLeft==0 ) {
 			NextProjTime = Level.TimeSeconds+2.5f+FRand()*2.f;
-			if ( Health == HealthMax ) 
+			if ( Health > HealthMax*0.9 )
 				NextProjTime += 2.f; // when Rev is full of health, shoot rarer
 		}
 		PrepareStillAttack(A);
@@ -52,16 +52,16 @@ state PissedOff
 	function BeginState()
 	{
 		GroundSpeed = OriginalGroundSpeed * 3.5;
-		
+
 		if ( bBurnified || bCrispified )
 			GroundSpeed *= 0.8;
-			
+
 		if( Level.NetMode!=NM_DedicatedServer )
 			PostNetReceive();
 
 		NetUpdateTime = Level.TimeSeconds - 1;
 	}
-	
+
 	//fire projectiles more often
 	function RangedAttack(Actor A)
 	{
@@ -99,18 +99,18 @@ state PissedOff
 		if( Level.NetMode!=NM_DedicatedServer )
 			PostNetReceive();
 		NetUpdateTime = Level.TimeSeconds - 1;
-	}	
-	
+	}
+
 	/*
 	function bool ShouldTryRanged( Actor A )
 	{
 		if (NextProjTime > Level.TimeSeconds )
 			return false;
-			
-		// better try to get to the melle range, if distance to the player is less than 7m 
+
+		// better try to get to the melle range, if distance to the player is less than 7m
 		if ( VSizeSquared(A.Location-Location) < 122500 )
 			return frand() < 0.2;
-			
+
 		return frand() < 0.4;
 	}
 	*/
@@ -119,10 +119,10 @@ state PissedOff
 	{
 		if ( class<KFWeaponDamageType>(damageType) != none && class<KFWeaponDamageType>(damageType).default.bIsExplosive )
 			Damage /= 2; // 50% resistance against explosives
-		
+
 		Super.takeDamage(Damage, instigatedBy, hitLocation, momentum, damageType, HitIndex);
 	}
-	
+
 }
 
 // rage him same way as Scrake
@@ -130,11 +130,11 @@ function TakeDamage( int Damage, Pawn InstigatedBy, Vector Hitlocation, Vector M
 {
 	if ( class<KFWeaponDamageType>(damageType) != none && class<KFWeaponDamageType>(damageType).default.bIsExplosive )
 		Damage /= 2; // 50% resistance against explosives
-	
+
 	Super.takeDamage(Damage, instigatedBy, hitLocation, momentum, damageType, HitIndex);
-	
+
 	// Added in Balance Round 3 to make the Scrake "Rage" more reliably when his health gets low(limited to Suicidal and HoE in Round 7)
-	if ( Health < HealthMax * 0.5 || (Level.Game.GameDifficulty >= 5.0 && Health < HealthMax * 0.75 ) ) 
+	if ( Health < HealthMax * 0.5 || (Level.Game.GameDifficulty >= 5.0 && Health < HealthMax * 0.75 ) )
 		GotoState('PissedOff');
 }
 
@@ -142,7 +142,7 @@ function TakeDamage( int Damage, Pawn InstigatedBy, Vector Hitlocation, Vector M
 // While enemy is not in reach but still in sight.
 function bool ShouldTryRanged( Actor A )
 {
-	return (NextProjTime<Level.TimeSeconds && FRand() < 0.4);
+	return (NextProjTime<Level.TimeSeconds && FRand() < 0.3);
 }
 
 simulated function Collapse()
@@ -392,7 +392,12 @@ defaultproperties
      CollisionRadius=20.000000
      CollisionHeight=44 // 50
 	 MaxMeleeAttacks=2
-     
+
      ZapThreshold=0.75
      ZappedDamageMod=1.5
+
+     bUseExtendedCollision=True
+     ColOffset=(X=20,Z=35)
+     ColRadius=30
+     ColHeight=20
 }

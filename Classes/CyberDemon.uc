@@ -145,10 +145,6 @@ defaultproperties
      BurnAnimTime=0.150000
      bCanAttackPipebombs=True
      bFatAss=True
-     bUseExtendedCollision=True
-     ColOffset=(Z=141.000000)
-     ColRadius=70.000000
-     ColHeight=90.000000
      FootStep(0)=Sound'2009DoomMonstersSounds.CyberDemon.CyberDemon_step2'
      FootStep(1)=Sound'2009DoomMonstersSounds.CyberDemon.CyberDemon_step3'
      bMeleeFighter=False
@@ -234,7 +230,8 @@ defaultproperties
      IdleRestAnim="Idle"
      IdleChatAnim="Idle"
      Mesh=SkeletalMesh'2009DoomMonstersAnims.CyberDemonMesh'
-     DrawScale=1.200000
+     DrawScale=0.8
+     PrePivot=(Z=-32)
      Skins(0)=Combiner'2009DoomMonstersTex.CyberDemon.JCyberDemonSkin'
      Skins(1)=Texture'2009DoomMonstersTex.Revenant.InvisMat'
      Skins(2)=Texture'2009DoomMonstersTex.Revenant.InvisMat'
@@ -242,7 +239,11 @@ defaultproperties
      Skins(4)=Texture'2009DoomMonstersTex.Revenant.InvisMat'
      TransientSoundVolume=2.000000
      TransientSoundRadius=1000.000000
-     CollisionRadius=50.000000
-     CollisionHeight=80.000000
+     CollisionRadius=26
+     CollisionHeight=44
+     bUseExtendedCollision=True
+     ColOffset=(X=20,Z=60)
+     ColRadius=80
+     ColHeight=80
      Mass=8000.000000
 }
