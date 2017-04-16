@@ -1,13 +1,13 @@
-This mutator brings Marco's DooM 3 monsters up-to-date. 
-Version [b]9.20[/b].
+This mutator brings Marco's DooM 3 monsters up-to-date.
+Version [b]9.40[/b].
 
-[URL=http://steamcommunity.com/groups/ScrNBalance][IMG]https://dl.dropboxusercontent.com/u/70213558/ButtonSteamGroup.png[/IMG][/URL]  [URL=http://steamcommunity.com/groups/ScrNBalance/discussions/6/540740500346245912/][IMG]https://dl.dropboxusercontent.com/u/70213558/ButtonDownload.png[/IMG][/URL]  [URL=https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=VFARLRAL7CNJ4&lc=LV&item_name=Scrake%20Naders%20Community&item_number=ScrnBalance&currency_code=EUR&bn=PP%2dDonationsBF%3abtn_donateCC_LG%2egif%3aNonHosted][IMG]https://dl.dropboxusercontent.com/u/70213558/ButtonDonate.png[/IMG][/URL]   
+[URL=http://steamcommunity.com/groups/ScrNBalance][IMG]https://dl.dropboxusercontent.com/u/70213558/ButtonSteamGroup.png[/IMG][/URL]  [URL=http://steamcommunity.com/groups/ScrNBalance/discussions/6/540740500346245912/][IMG]https://dl.dropboxusercontent.com/u/70213558/ButtonDownload.png[/IMG][/URL]  [URL=https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=VFARLRAL7CNJ4&lc=LV&item_name=Scrake%20Naders%20Community&item_number=ScrnBalance&currency_code=EUR&bn=PP%2dDonationsBF%3abtn_donateCC_LG%2egif%3aNonHosted][IMG]https://dl.dropboxusercontent.com/u/70213558/ButtonDonate.png[/IMG][/URL]
 
 Major changes:
 [list]
 [*] Made fully compatible with the latest KF version.
 [*] Reworked monster balance.
-[*] New end game boss behavior. 
+[*] New end game boss behavior.
 [*] Fixed many hitboxes (not all though).
 [/list]
 
@@ -30,7 +30,7 @@ Major changes:
 [*] Imp's fireballs now sets players on fire (but base damage is lowered by 25%).
 [*] Imp, Archive and Forgotten are resistant to burning. Firebug is almost useless against those creatures, but from be other side, he is immune to their projectiles (flames) too.
 [*] Raised Fat Zombie and Boney's speed.
-[*] Revenant can be raged. 
+[*] Revenant can be raged.
 [*] Lowered Maledict's health and melee damage. Even after the nerf, he still remains the most dangerous boss.
 
 [/list]
@@ -38,7 +38,7 @@ Major changes:
 [b][u]End game boss[/u][/b]
 Now end game boss fight against doom boss will be a real challenge, introducing new features.
 
-Unlike Patriarch, Doom boss doesn't heal, but he has more health and from time to time he is spawning sidekicks (regular doom monsters) to help in the battle. Boss spawns sidekicks the same way as Archvile does - they are teleported directly from Hell next to the boss. Sidekick spawn rate depends from two factors: damage factor and time factor. 
+Unlike Patriarch, Doom boss doesn't heal, but he has more health and from time to time he is spawning sidekicks (regular doom monsters) to help in the battle. Boss spawns sidekicks the same way as Archvile does - they are teleported directly from Hell next to the boss. Sidekick spawn rate depends from two factors: damage factor and time factor.
 The more damage boss receives, the higher damage factor raises, meaning more and tougher zeds will spawn. So just spamming shots into the boss will make team surrounded by doom monsters and [probably] get wiped. However, even if boss doesn't get hurt for a while, time factor will still be in place and sidekicks will be spawning. So team must split their resources on both fighting the boss and getting rid of the sidekicks.
 
 [i]PatBossMult[/i] variable added, allowing to make Pat Replacement bosses to have more health comparing to regular, in-wave bosses.
