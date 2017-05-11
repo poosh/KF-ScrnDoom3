@@ -157,6 +157,7 @@ defaultproperties
      GroundSpeed=170.000000
      HealthMax=7500.000000
      Health=7500
+     PlayerCountHealthScale=0.75
      HeadRadius=15.000000
      MenuName="Sabaoth"
      ControllerClass=Class'ScrnDoom3KF.SabaothAI'
@@ -232,4 +233,5 @@ defaultproperties
      Mass=6000.000000
      RotationRate=(Yaw=100000)
 	 FireRootBone="mech_spine_5"
+     ZapThreshold=5
 }

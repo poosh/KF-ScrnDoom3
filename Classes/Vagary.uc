@@ -307,6 +307,7 @@ defaultproperties
      GroundSpeed=250.000000
      HealthMax=7000
      Health=7000
+     PlayerCountHealthScale=0.75
      HeadRadius=10
      MenuName="Vagary"
      MovementAnims(0)="Walk"
@@ -367,4 +368,5 @@ defaultproperties
 	 MaxMeleeAttacks=2
 
 	 FireRootBone="BabySpine1"
+     ZapThreshold=5
 }

@@ -179,6 +179,7 @@ defaultproperties
      GroundSpeed=210.000000
      HealthMax=7000.000000
      Health=7000
+     PlayerCountHealthScale=0.75
      HeadRadius=24.000000
      MenuName="CyberDemon"
      ControllerClass=Class'ScrnDoom3KF.CyberDemonAI'
@@ -246,4 +247,5 @@ defaultproperties
      ColRadius=80
      ColHeight=80
      Mass=8000.000000
+     ZapThreshold=5
 }

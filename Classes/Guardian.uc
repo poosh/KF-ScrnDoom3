@@ -369,6 +369,7 @@ defaultproperties
      GroundSpeed=200.000000
      HealthMax=5000.000000
      Health=5000
+     PlayerCountHealthScale=0.75
      MenuName="Guardian"
      ControllerClass=Class'ScrnDoom3KF.GuardianAI'
      MovementAnims(0)="Walk"
@@ -432,4 +433,5 @@ defaultproperties
      HeadRadius=40.000000
      DrawScale=0.8
      PrePivot=(Z=8)
+     ZapThreshold=5
 }

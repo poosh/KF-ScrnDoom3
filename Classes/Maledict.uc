@@ -267,6 +267,7 @@ defaultproperties
      AirSpeed=500.000000
      HealthMax=4000.000000
      Health=4000
+     PlayerCountHealthScale=0.75
      HeadRadius=50
      MenuName="Maledict"
      bPhysicsAnimUpdate=False
@@ -333,4 +334,6 @@ defaultproperties
      bUseExtendedCollision=True
      ColRadius=180
      ColHeight=100
+
+     ZapThreshold=2
 }

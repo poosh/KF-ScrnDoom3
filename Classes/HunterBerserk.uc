@@ -432,6 +432,7 @@ defaultproperties
      GroundSpeed=400.000000
      HealthMax=5000
      Health=5000
+     PlayerCountHealthScale=0.75
      HeadRadius=21.000000
      MenuName="Berserk Hunter"
      MovementAnims(0)="Run"

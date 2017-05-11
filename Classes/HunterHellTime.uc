@@ -381,6 +381,7 @@ defaultproperties
      GroundSpeed=300.000000
      HealthMax=4500.000000
      Health=4500
+     PlayerCountHealthScale=0.75
      HeadRadius=16.000000
      MenuName="HellTime Hunter"
      ControllerClass=Class'ScrnDoom3KF.HunterHellTimeAI'
@@ -445,4 +446,6 @@ defaultproperties
      ColOffset=(Z=30.000000)
      ColRadius=60
      ColHeight=60
+
+     ZapThreshold=2
 }

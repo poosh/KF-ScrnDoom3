@@ -431,6 +431,7 @@ defaultproperties
      GroundSpeed=200.000000
      HealthMax=6500.000000
      Health=6500
+     PlayerCountHealthScale=0.75
      HeadRadius=20
      MenuName="Invulnerability Hunter"
      MovementAnims(0)="Walk1"
@@ -491,4 +492,5 @@ defaultproperties
      Mass=3000.000000
 	 MaxMeleeAttacks=3
      RootBone="HK_jaw_2"
+     ZapThreshold=3
 }
