@@ -771,7 +771,6 @@ function bool SetBossLaught()
 //Allow server admin to configure different player scaling between in-game bosses and Pat replacement
 function bool MakeGrandEntry()
 {
-	Health+= FMax(0.f,Level.Game.NumPlayers-1) * Class'Doom3Mutator'.Default.BossPerPlayerHP * float(Default.Health);
     Health*= Class'Doom3Mutator'.Default.PatBossMult; // (c) PooSH
     HealthMax = Health;
     ZapThreshold=10;

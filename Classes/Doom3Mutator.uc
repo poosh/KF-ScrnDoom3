@@ -5,7 +5,7 @@
 class Doom3Mutator extends Mutator
 	Config(Doom3KF);
 
-const VERSION = 94500;
+const VERSION = 94700;
 var localized string strVersion;
 
 var config float MinDoomPct,MaxDoomPct;

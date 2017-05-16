@@ -15,6 +15,12 @@ Contact via Steam: [ScrN]PooSH
 
 Changes made by [ScrN]PooSH:
 ------------------------------------------------------------------------------
+v9.47
+------------------------------------------------------------------------------
+- Fixed bug when per-player health multiplier was applied twice for end-game bosses
+- BossPerPlayerHP doesn't affect end-game boss anymore (use PatBossMult instead)
+
+------------------------------------------------------------------------------
 v9.45
 ------------------------------------------------------------------------------
 - Health of Doom Bosses now are scaled normally, even if not spawned by Doom3Mutator
