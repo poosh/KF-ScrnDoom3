@@ -1,4 +1,4 @@
-class HunterInvul extends DoomMonster;
+class HunterInvul extends DoomBoss;
 
 var() class<Projectile> BigProjectileClass;
 var HunterInvulHandBeams HBeams[2];

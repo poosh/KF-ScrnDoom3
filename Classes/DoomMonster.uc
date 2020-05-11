@@ -28,7 +28,7 @@ var() byte BurnedTextureNum[2];
 
 var(Anims) bool HasHitAnims;
 var() bool bHasFireWeakness,BigMonster;
-var bool Collapsing,bWasBossPat;
+var bool Collapsing,bEndGameBoss;
 var bool Burning;
 var bool bHasRoamed;
 var bool bIsBossSpawn;
@@ -274,13 +274,6 @@ simulated function Tick(float DeltaTime)
 		NextBileTime+=BileFrequency;
 		TakeBileDamage();
 	}
-
-
-    if ( Role == ROLE_Authority ) {
-        // PAT replacements attack pipebombs
-        if ( bWasBossPat && bCanAttackPipebombs )
-            AttackPipebombs();
-    }
 }
 
 function bool SayToPlayers(string msg, optional bool ForceSay)
@@ -358,11 +351,11 @@ simulated function FreeFXObjects()
 
 function MeleeAttack()
 {
-	if( Controller!=None && Controller.Target!=None )
-	{
+	if( Controller!=None && Controller.Target!=None ) {
 		if (MeleeDamageTarget(MeleeDamage, (MeleeKnockBack * Normal(Controller.Target.Location - Location))) )
 			PlaySound(MeleeAttackSounds[Rand(ArrayCount(MeleeAttackSounds))], SLOT_Interact);
-		else PlaySound(MissSound[Rand(ArrayCount(MissSound))], SLOT_Interact);
+		else
+			PlaySound(MissSound[Rand(ArrayCount(MissSound))], SLOT_Interact);
 	}
 }
 
@@ -492,7 +485,7 @@ function Died(Controller Killer, class<DamageType> damageType, vector HitLocatio
 
 	Super.Died(Killer,damageType,HitLocation);
 
-	if( bWasBossPat )
+	if( bEndGameBoss )
 	{
 		KFGameType(Level.Game).DoBossDeath();
 	}
@@ -775,13 +768,13 @@ function bool MakeGrandEntry()
     HealthMax = Health;
     ZapThreshold=10;
 	RoamAtPlayer();
-	bWasBossPat = true;
+	bEndGameBoss = true;
     PatExt = spawn(class'BossExt',self);
     if ( PatExt != none )
         PatExt.Boss = self;
 		PatExt.DifficultyHealthModifer = DifficultyHealthModifer();
 
-	return True;
+	return true;
 }
 
 simulated function MakeBurnAway()
@@ -1072,7 +1065,7 @@ function TakeDamage(int Damage, Pawn instigatedBy, Vector hitlocation, Vector mo
 		}
 	}
 
-    if ( bWasBossPat ) {
+    if ( bEndGameBoss ) {
 
         // Boss whining about retarded demons :)
         if (instigatedBy != self && DoomMonster(instigatedBy) != none && Level.TimeSeconds > NextChatTime ) {

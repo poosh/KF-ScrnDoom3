@@ -1,4 +1,4 @@
-Class HunterHellTimeAI extends Doom3Controller;
+Class HunterHellTimeAI extends DoomBossAI;
 
 function FightEnemy(bool bCanCharge)
 {

@@ -1,7 +1,7 @@
- class HunterBerserk extends DoomMonster;
+ class HunterBerserk extends DoomBoss;
 
 var() int LungeAttackDamage;
-var transient float NextRangedAttackTime,RangedTimer,NextRageTime;
+var transient float NextRangedAttackTime,NextChestOpenTime,NextRageTime;
 var HunterChargeEffect ChargeEffect;
 var HunterMainEffect BodyEffect;
 var Sound ChestRipSound[3];
@@ -33,73 +33,84 @@ simulated function PostNetReceive()
 }
 function RangedAttack(Actor A)
 {
+	local float h;
+
 	if ( bShotAnim )
 		return;
 
-	if( !bHasRoamed )
-	{
+	h = float(Health) / HealthMax;
+
+	if( !bHasRoamed ) {
 		RoamAtPlayer();
 		bIsRageMode = true;
 		SetRageAnimations();
-		NextRageTime = Level.TimeSeconds+6.f+FRand()*5.f;
+		NextRageTime = Level.TimeSeconds + 6.0 + frand()*5.f;
 	}
-	else if( IsInMeleeRange(A) )
-	{
+	else if( IsInMeleeRange(A) && MaxMeleeAttacks > 0 ) {
 		PrepareStillAttack(A);
-		if( bIsRageMode )
-		{
+		--MaxMeleeAttacks;
+		if( bIsRageMode ) {
+			// rage mode does double damage, so counts as two melee attacks
+			--MaxMeleeAttacks;
 			MeleeAttack();
 			SetAnimAction(MeleeAnims[1]);
 		}
-		else if( FRand()<0.1f )
+		else if( frand() < 0.2f ) {
 			MakeStrafeStep();
-		else SetAnimAction(MeleeAnims[0]);
+		}
+		else {
+			SetAnimAction(MeleeAnims[0]);
+		}
 	}
-	else if( bIsRageMode )
-	{
-		if( NextRageTime<Level.TimeSeconds )
-		{
-			NextRageTime = Level.TimeSeconds+3.f+FRand()*7.f;
+	else if( bIsRageMode ) {
+		if( Level.TimeSeconds > NextRageTime ) {
+			NextRageTime = Level.TimeSeconds + 3.0 + 6.0*h + 3.0*frand();
 			PrepareStillAttack(A);
 			SetAnimAction('Pain3');
 			bIsRageMode = false;
 			SetRageAnimations();
 		}
-		else if( NextRangedAttackTime<Level.TimeSeconds && VSize(A.Location-Location)<300.f )
-		{
-			NextRangedAttackTime = Level.TimeSeconds+2.f+FRand()*3.f;
+		else if( Level.TimeSeconds > NextRangedAttackTime && VSizeSquared(A.Location-Location) < 90000.f ) {
+			NextRangedAttackTime = Level.TimeSeconds + 2.0 + 3.0*frand();
 			PrepareMovingAttack(A,-0.7);
 			SetAnimAction('JumpStart');
+			MaxMeleeAttacks = max(MaxMeleeAttacks, 2);
 		}
+		// else continue roaming
 	}
-	else
-	{
-		if( NextRangedAttackTime<Level.TimeSeconds || RangedTimer>Level.TimeSeconds )
-		{
-			if( NextRangedAttackTime<Level.TimeSeconds )
-			{
-				NextRangedAttackTime = Level.TimeSeconds+4.f+FRand()*6.f;
-				RangedTimer = Level.TimeSeconds+1.f+FRand()*3.f;
-			}
-			PrepareStillAttack(A);
-			PlaySound(PreFireSound,SLOT_Interact);
-			SetAnimAction('Attack2');
-            ChestOpenedUntil = Level.TimeSeconds + 2.15;
-		}
-		else if( NextRageTime<Level.TimeSeconds )
-		{
-			NextRageTime = Level.TimeSeconds+4.f+FRand()*4.f;
-			RoamAtPlayer();
-			bIsRageMode = true;
-			SetRageAnimations();
-		}
-		else MakeStrafeStep();
+	else if( Level.TimeSeconds > NextChestOpenTime ) {
+		NextChestOpenTime = Level.TimeSeconds + 4.0 + 6.0*frand();
+		PrepareStillAttack(A);
+		PlaySound(PreFireSound,SLOT_Interact);
+		SetAnimAction('Attack2');
+		ChestOpenedUntil = Level.TimeSeconds + 2.15;
+		MaxMeleeAttacks = default.MaxMeleeAttacks;
 	}
+	else if( Level.TimeSeconds > NextRageTime ) {
+		NextRageTime = Level.TimeSeconds + 5.0 - 4.0*h + 3.0*frand();
+		RoamAtPlayer();
+		bIsRageMode = true;
+		SetRageAnimations();
+		MaxMeleeAttacks = default.MaxMeleeAttacks;
+	}
+	else if ( frand() < 0.6 ) {
+		MakeStrafeStep();
+	}
+	else {
+		RoamAtPlayer();
+		NextRageTime = Level.TimeSeconds;
+	}
+}
+
+function RoamAtPlayer()
+{
+	super.RoamAtPlayer();
+	ChestOpenedUntil = Level.TimeSeconds + 1.0;
 }
 
 function bool ShouldTryRanged( Actor A )
 {
-	return (NextRangedAttackTime<Level.TimeSeconds);
+	return Level.TimeSeconds > NextRangedAttackTime || Level.TimeSeconds > NextChestOpenTime;
 }
 
 function bool ShouldChargeAtPlayer()
@@ -289,22 +300,25 @@ simulated function BurnAway()
 
 function TakeDamage( int Damage, Pawn InstigatedBy, vector HitLocation, vector Momentum, class<DamageType> DamageType, optional int HitIndex )
 {
-    local int OldHealth;
+	local int OldHealth;
 
-    if ( Damage > 0) {
-        if( !IsHeadShot(HitLocation,Normal(Momentum),1.f) )
-            Damage *= 0.6; // 40% damage resistance
-        else if( bLunging || Level.TimeSeconds < ChestOpenedUntil )
-            Damage *= 2; // headshot in opened chest
-        else
-            Damage *= 0.8; // headshot in closed chest
-    }
-    OldHealth = Health;
+	if ( Damage > 0) {
+		if( !IsHeadShot(HitLocation,Normal(Momentum),1.f) )
+			Damage *= 0.6; // 40% damage resistance to body damage
+		else if( bLunging || Level.TimeSeconds < ChestOpenedUntil )
+			Damage *= 2.5; // shot in the opened chest
+		else
+			Damage *= 0.8; // 20% damage resistance to the closed chest
+	}
+	OldHealth = Health;
 	Super.TakeDamage(Damage,InstigatedBy,HitLocation,Momentum,DamageType,HitIndex);
-    // strong headshots stop hunter in midair
-    if ( bLunging && OldHealth - Health >= 666 ) {
-        Velocity = vect(0, 0, -50);
-    }
+	// strong headshots stop hunter in midair
+	if ( bLunging && OldHealth - Health >= 666 ) {
+		if (bIsRageMode) {
+			NextRageTime = 0;  // stop raging
+		}
+		Velocity = vect(0, 0, -50);
+	}
 }
 
 function bool IsHeadShot(vector loc, vector ray, float AdditionalScale)
@@ -349,10 +363,10 @@ function bool IsHeadShot(vector loc, vector ray, float AdditionalScale)
 		}
 	}
 	Distance = Sqrt(diff Dot diff);
-    if ( bLunging )
-        return Distance < 2.0 * HeadRadius * HeadScale * AdditionalScale;
+	if ( bLunging )
+		return Distance < 2.0 * HeadRadius * HeadScale * AdditionalScale;
 
-    return (Distance < (HeadRadius * HeadScale * AdditionalScale));
+	return (Distance < (HeadRadius * HeadScale * AdditionalScale));
 }
 
 /*function Tick( float Delta )
@@ -368,134 +382,135 @@ function bool IsHeadShot(vector loc, vector ray, float AdditionalScale)
 
 defaultproperties
 {
-     LungeAttackDamage=27
-     ChestRipSound(0)=Sound'2009DoomMonstersSounds.Hunter.Hunter_chestrip_01'
-     ChestRipSound(1)=Sound'2009DoomMonstersSounds.Hunter.Hunter_chestrip_03'
-     ChestRipSound(2)=Sound'2009DoomMonstersSounds.Hunter.Hunter_chestrip_04'
-     PreFireSound=Sound'2009DoomMonstersSounds.Hunter.Hunter_fb_prefire_01'
-     DeathAnims(0)="DeathF"
-     DeathAnims(1)="DeathB"
-     DeathAnims(2)="DeathF"
-     DeathAnims(3)="DeathB"
-     SightAnim="Rage"
-     HitAnimsX(0)="Pain"
-     HitAnimsX(1)="Pain"
-     HitAnimsX(2)="Pain"
-     HitAnimsX(3)="Pain"
-     MinHitAnimDelay=3.000000
-     MeleeAttackSounds(0)=Sound'2009DoomMonstersSounds.Hunter.Hunter_attack_01'
-     MeleeAttackSounds(1)=Sound'2009DoomMonstersSounds.Hunter.Hunter_attack_07'
-     MeleeAttackSounds(2)=Sound'2009DoomMonstersSounds.Hunter.Hunter_attack_09'
-     MeleeAttackSounds(3)=Sound'2009DoomMonstersSounds.Hunter.Hunter_attack_11'
-     SightSound=Sound'2009DoomMonstersSounds.Hunter.Hunter_sight_01'
-     FadeClass=Class'ScrnDoom3KF.HunterBerserkMaterialSequence'
-     RangedProjectile=Class'ScrnDoom3KF.HunterProjectile'
-     DoomTeleportFXClass=Class'ScrnDoom3KF.BossDemonSpawn'
-     HasHitAnims=True
-     BigMonster=True
-     aimerror=50
-     BurnAnimTime=0.250000
-     MeleeAnims(0)="Attack1"
-     MeleeAnims(1)="Attack3"
-     MeleeDamage=15
-     bFatAss=True
-     FootStep(0)=Sound'2009DoomMonstersSounds.HellKnight.HellKnight_step1'
-     FootStep(1)=Sound'2009DoomMonstersSounds.HellKnight.HellKnight_step1'
-     bBoss=True
-     DodgeSkillAdjust=2.000000
-     HitSound(0)=Sound'2009DoomMonstersSounds.Hunter.Hunter_pain_01'
-     HitSound(1)=Sound'2009DoomMonstersSounds.Hunter.Hunter_pain_02'
-     HitSound(2)=Sound'2009DoomMonstersSounds.Hunter.Hunter_pain_06'
-     HitSound(3)=Sound'2009DoomMonstersSounds.Hunter.Hunter_pain_08'
-     DeathSound(0)=Sound'2009DoomMonstersSounds.Hunter.Hunter_death_03'
-     DeathSound(1)=Sound'2009DoomMonstersSounds.Hunter.Hunter_death_05'
-     DeathSound(2)=Sound'2009DoomMonstersSounds.Hunter.Hunter_death_03'
-     DeathSound(3)=Sound'2009DoomMonstersSounds.Hunter.Hunter_death_05'
-     ChallengeSound(0)=Sound'2009DoomMonstersSounds.Hunter.Hunter_mono_growl_25'
-     ChallengeSound(1)=Sound'2009DoomMonstersSounds.Hunter.Hunter_st_growl_25'
-     ChallengeSound(2)=Sound'2009DoomMonstersSounds.Hunter.Hunter_mono_growl_03'
-     ChallengeSound(3)=Sound'2009DoomMonstersSounds.Hunter.Hunter_mono_growl_27'
-     FireSound=Sound'2009DoomMonstersSounds.Hunter.Hunter_fb_prefire_03'
-     ScoringValue=750
-     WallDodgeAnims(0)="DodgeL"
-     WallDodgeAnims(1)="DodgeR"
-     WallDodgeAnims(2)="DodgeL"
-     WallDodgeAnims(3)="DodgeR"
-     IdleHeavyAnim="Idle"
-     IdleRifleAnim="Idle"
-     FireHeavyRapidAnim="Run"
-     FireHeavyBurstAnim="Run"
-     FireRifleRapidAnim="Run"
-     FireRifleBurstAnim="Run"
-     bCanJump=False
-     MeleeRange=100.000000
-     GroundSpeed=400.000000
-     HealthMax=5000
-     Health=5000
-     PlayerCountHealthScale=0.75
-     HeadRadius=21.000000
-     MenuName="Berserk Hunter"
-     MovementAnims(0)="Run"
-     MovementAnims(1)="Run"
-     MovementAnims(2)="Run"
-     MovementAnims(3)="Run"
-     TurnLeftAnim="Idle"
-     TurnRightAnim="Idle"
-     SwimAnims(0)="Run"
-     SwimAnims(1)="Run"
-     SwimAnims(2)="Run"
-     SwimAnims(3)="Run"
-     CrouchAnims(0)="Run"
-     CrouchAnims(1)="Run"
-     CrouchAnims(2)="Run"
-     CrouchAnims(3)="Run"
-     WalkAnims(0)="Run"
-     WalkAnims(1)="Run"
-     WalkAnims(2)="Run"
-     WalkAnims(3)="Run"
-     AirAnims(0)="JumpMiddle"
-     AirAnims(1)="JumpMiddle"
-     AirAnims(2)="JumpMiddle"
-     AirAnims(3)="JumpMiddle"
-     TakeoffAnims(0)="JumpMiddle"
-     TakeoffAnims(1)="JumpMiddle"
-     TakeoffAnims(2)="JumpMiddle"
-     TakeoffAnims(3)="JumpMiddle"
-     LandAnims(0)="Run"
-     LandAnims(1)="Run"
-     LandAnims(2)="Run"
-     LandAnims(3)="Run"
-     DoubleJumpAnims(0)="Run"
-     DoubleJumpAnims(1)="Run"
-     DoubleJumpAnims(2)="Run"
-     DoubleJumpAnims(3)="Run"
-     DodgeAnims(0)="DodgeL"
-     DodgeAnims(1)="DodgeR"
-     AirStillAnim="JumpMiddle"
-     TakeoffStillAnim="Run"
-     CrouchTurnRightAnim="Run"
-     CrouchTurnLeftAnim="Run"
-     IdleCrouchAnim="Idle"
-     IdleSwimAnim="Idle"
-     IdleWeaponAnim="Idle"
-     IdleRestAnim="Idle"
-     IdleChatAnim="Idle"
-     HeadBone="heart1"
-     Mesh=SkeletalMesh'2009DoomMonstersAnims.HunterBerserkMesh'
-     DrawScale=1.0
-     PrePivot=(Z=5)
-     Skins(0)=Combiner'2009DoomMonstersTex.HunterBerserk.JHunterBerserkSkin'
-     Skins(1)=Texture'2009DoomMonstersTex.HunterBerserk.HunterBerserkClaws'
-     Skins(2)=Shader'2009DoomMonstersTex.HunterBerserk.HunterBerserkHeartShader'
-     CollisionRadius=26 //30
-     CollisionHeight=44 // 50
-     Mass=2000.000000
-     bUseExtendedCollision=True
-     ColOffset=(Z=60)
-     ColRadius=35
-     ColHeight=50
-     OnlineHeadshotOffset=(X=37,Z=36)
+	 LungeAttackDamage=27
+	 ChestRipSound(0)=Sound'2009DoomMonstersSounds.Hunter.Hunter_chestrip_01'
+	 ChestRipSound(1)=Sound'2009DoomMonstersSounds.Hunter.Hunter_chestrip_03'
+	 ChestRipSound(2)=Sound'2009DoomMonstersSounds.Hunter.Hunter_chestrip_04'
+	 PreFireSound=Sound'2009DoomMonstersSounds.Hunter.Hunter_fb_prefire_01'
+	 DeathAnims(0)="DeathF"
+	 DeathAnims(1)="DeathB"
+	 DeathAnims(2)="DeathF"
+	 DeathAnims(3)="DeathB"
+	 SightAnim="Rage"
+	 HitAnimsX(0)="Pain"
+	 HitAnimsX(1)="Pain"
+	 HitAnimsX(2)="Pain"
+	 HitAnimsX(3)="Pain"
+	 MinHitAnimDelay=3.000000
+	 MeleeAttackSounds(0)=Sound'2009DoomMonstersSounds.Hunter.Hunter_attack_01'
+	 MeleeAttackSounds(1)=Sound'2009DoomMonstersSounds.Hunter.Hunter_attack_07'
+	 MeleeAttackSounds(2)=Sound'2009DoomMonstersSounds.Hunter.Hunter_attack_09'
+	 MeleeAttackSounds(3)=Sound'2009DoomMonstersSounds.Hunter.Hunter_attack_11'
+	 SightSound=Sound'2009DoomMonstersSounds.Hunter.Hunter_sight_01'
+	 FadeClass=Class'ScrnDoom3KF.HunterBerserkMaterialSequence'
+	 RangedProjectile=Class'ScrnDoom3KF.HunterProjectile'
+	 DoomTeleportFXClass=Class'ScrnDoom3KF.BossDemonSpawn'
+	 HasHitAnims=True
+	 BigMonster=True
+	 aimerror=50
+	 BurnAnimTime=0.250000
+	 MeleeAnims(0)="Attack1"
+	 MeleeAnims(1)="Attack3"
+	 MeleeDamage=15
+	 bFatAss=True
+	 FootStep(0)=Sound'2009DoomMonstersSounds.HellKnight.HellKnight_step1'
+	 FootStep(1)=Sound'2009DoomMonstersSounds.HellKnight.HellKnight_step1'
+	 bBoss=True
+	 DodgeSkillAdjust=2.000000
+	 HitSound(0)=Sound'2009DoomMonstersSounds.Hunter.Hunter_pain_01'
+	 HitSound(1)=Sound'2009DoomMonstersSounds.Hunter.Hunter_pain_02'
+	 HitSound(2)=Sound'2009DoomMonstersSounds.Hunter.Hunter_pain_06'
+	 HitSound(3)=Sound'2009DoomMonstersSounds.Hunter.Hunter_pain_08'
+	 DeathSound(0)=Sound'2009DoomMonstersSounds.Hunter.Hunter_death_03'
+	 DeathSound(1)=Sound'2009DoomMonstersSounds.Hunter.Hunter_death_05'
+	 DeathSound(2)=Sound'2009DoomMonstersSounds.Hunter.Hunter_death_03'
+	 DeathSound(3)=Sound'2009DoomMonstersSounds.Hunter.Hunter_death_05'
+	 ChallengeSound(0)=Sound'2009DoomMonstersSounds.Hunter.Hunter_mono_growl_25'
+	 ChallengeSound(1)=Sound'2009DoomMonstersSounds.Hunter.Hunter_st_growl_25'
+	 ChallengeSound(2)=Sound'2009DoomMonstersSounds.Hunter.Hunter_mono_growl_03'
+	 ChallengeSound(3)=Sound'2009DoomMonstersSounds.Hunter.Hunter_mono_growl_27'
+	 FireSound=Sound'2009DoomMonstersSounds.Hunter.Hunter_fb_prefire_03'
+	 ScoringValue=750
+	 WallDodgeAnims(0)="DodgeL"
+	 WallDodgeAnims(1)="DodgeR"
+	 WallDodgeAnims(2)="DodgeL"
+	 WallDodgeAnims(3)="DodgeR"
+	 IdleHeavyAnim="Idle"
+	 IdleRifleAnim="Idle"
+	 FireHeavyRapidAnim="Run"
+	 FireHeavyBurstAnim="Run"
+	 FireRifleRapidAnim="Run"
+	 FireRifleBurstAnim="Run"
+	 bCanJump=False
+	 MeleeRange=100.000000
+	 GroundSpeed=400.000000
+	 HealthMax=5000
+	 Health=5000
+	 PlayerCountHealthScale=0.75
+	 HeadRadius=21.000000
+	 MenuName="Berserk Hunter"
+	 MovementAnims(0)="Run"
+	 MovementAnims(1)="Run"
+	 MovementAnims(2)="Run"
+	 MovementAnims(3)="Run"
+	 TurnLeftAnim="Idle"
+	 TurnRightAnim="Idle"
+	 SwimAnims(0)="Run"
+	 SwimAnims(1)="Run"
+	 SwimAnims(2)="Run"
+	 SwimAnims(3)="Run"
+	 CrouchAnims(0)="Run"
+	 CrouchAnims(1)="Run"
+	 CrouchAnims(2)="Run"
+	 CrouchAnims(3)="Run"
+	 WalkAnims(0)="Run"
+	 WalkAnims(1)="Run"
+	 WalkAnims(2)="Run"
+	 WalkAnims(3)="Run"
+	 AirAnims(0)="JumpMiddle"
+	 AirAnims(1)="JumpMiddle"
+	 AirAnims(2)="JumpMiddle"
+	 AirAnims(3)="JumpMiddle"
+	 TakeoffAnims(0)="JumpMiddle"
+	 TakeoffAnims(1)="JumpMiddle"
+	 TakeoffAnims(2)="JumpMiddle"
+	 TakeoffAnims(3)="JumpMiddle"
+	 LandAnims(0)="Run"
+	 LandAnims(1)="Run"
+	 LandAnims(2)="Run"
+	 LandAnims(3)="Run"
+	 DoubleJumpAnims(0)="Run"
+	 DoubleJumpAnims(1)="Run"
+	 DoubleJumpAnims(2)="Run"
+	 DoubleJumpAnims(3)="Run"
+	 DodgeAnims(0)="DodgeL"
+	 DodgeAnims(1)="DodgeR"
+	 AirStillAnim="JumpMiddle"
+	 TakeoffStillAnim="Run"
+	 CrouchTurnRightAnim="Run"
+	 CrouchTurnLeftAnim="Run"
+	 IdleCrouchAnim="Idle"
+	 IdleSwimAnim="Idle"
+	 IdleWeaponAnim="Idle"
+	 IdleRestAnim="Idle"
+	 IdleChatAnim="Idle"
+	 HeadBone="heart1"
+	 Mesh=SkeletalMesh'2009DoomMonstersAnims.HunterBerserkMesh'
+	 DrawScale=1.0
+	 PrePivot=(Z=5)
+	 Skins(0)=Combiner'2009DoomMonstersTex.HunterBerserk.JHunterBerserkSkin'
+	 Skins(1)=Texture'2009DoomMonstersTex.HunterBerserk.HunterBerserkClaws'
+	 Skins(2)=Shader'2009DoomMonstersTex.HunterBerserk.HunterBerserkHeartShader'
+	 CollisionRadius=26 //30
+	 CollisionHeight=44 // 50
+	 Mass=2000.000000
+	 bUseExtendedCollision=True
+	 ColOffset=(Z=60)
+	 ColRadius=35
+	 ColHeight=50
+	 OnlineHeadshotOffset=(X=37,Z=36)
 
-     ZapThreshold=5.0
-     ZappedDamageMod=2.0
+	 ZapThreshold=5.0
+	 ZappedDamageMod=2.0
+	 MaxMeleeAttacks=6
 }

@@ -1,4 +1,4 @@
-class Maledict extends DoomMonster;
+class Maledict extends DoomBoss;
 
 var(Anims) Name SummonAnims[3];
 var(Sounds) Sound ChargeSound[2],AsteroidSpawnSounds[2],OtherSpawnSpawns[4];

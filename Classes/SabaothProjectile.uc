@@ -6,9 +6,11 @@ var class<SabaothProjArc> GreenArcs[2];
 var Sound ArcSounds[3];
 var vector NormalDir;
 var bool bHadDeathFX;
+var int Health;
+var float ChargeTime;
 
 var transient int PlayerHits; //how many times arcs hit players
-var transient bool bDestoyedByHuman; 
+var transient bool bDestoyedByHuman;
 
 simulated function PostBeginPlay()
 {
@@ -17,13 +19,18 @@ simulated function PostBeginPlay()
 	if ( Level.NetMode != NM_DedicatedServer )
 		Trail = Spawn(class'SabaothProjTrail',self);
 	Velocity = Vector(Rotation) * Speed;
-	SetTimer(0.1,true);
+	ChargeTime = Level.TimeSeconds + default.ChargeTime;
+	SetTimer(1.0, false);
 }
+
 simulated function Timer()
 {
 	local Actor A;
 	local byte ArcCounter;
 	local SabaothProjArc Arc;
+
+	if (bDeleteMe)
+		return;
 
 	if( NormalDir==vect(0,0,0) )
 		NormalDir = Normal(Velocity);
@@ -48,13 +55,23 @@ simulated function Timer()
 				break;
 		}
 	}
+	SetTimer(0.1, false);
 }
 
 simulated function Explode(vector HitLocation,vector HitNormal)
 {
+	local int OriginalDamage;
+
 	if( bHadDeathFX )
 		return;
 	bHadDeathFX = true;
+
+	OriginalDamage = Damage;
+	if ( Level.TimeSeconds < ChargeTime ) {
+		Damage *= fmax(0.2, 1.0 - ((ChargeTime - Level.TimeSeconds) / default.ChargeTime));
+	}
+	Level.GetLocalPlayerController().ClientMessage("BFG exploded with Damage " $ Damage $ " / " $ OriginalDamage);
+
 	HurtRadius(Damage, DamageRadius, MyDamageType, MomentumTransfer, HitLocation );
 
 	PlaySound(NewImpactSounds[Rand(4)], SLOT_Misc);
@@ -94,13 +111,20 @@ singular function HitWall(vector HitNormal, actor Wall)
 }
 function TakeDamage(int Damage, Pawn InstigatedBy, vector HitLocation, vector Momentum, class<DamageType> DamageType, optional int HitIndex)
 {
-	if( Damage>=40 )
-	{
-        bDestoyedByHuman = KFPawn(InstigatedBy) != none;
+	local class<KFWeaponDamageType> KFDamType;
+
+	KFDamType = class<KFWeaponDamageType>(DamageType);
+	if (KFDamType != none && KFDamType.default.bCheckForHeadShots && KFDamType.default.HeadShotDamageMult > 1.0) {
+		Damage *= KFDamType.default.HeadShotDamageMult;
+	}
+
+	Health -= Damage;
+	if( Health <= 0 ) {
+		bDestoyedByHuman = KFPawn(InstigatedBy) != none;
 		DamageRadius = 100.f;
 		Explode(Location,Normal(Location-HitLocation));
 		// this added for achievement track - destory BFG cell before it hurts anyone
-		if ( PlayerHits <= 6 ) {
+		if ( PlayerHits == 0 ) {
 			Instigator.TakeDamage(666, InstigatedBy, Instigator.Location, vect(0,0,0), class'DamTypeBFG' );
 		}
 	}
@@ -130,12 +154,12 @@ simulated function HurtRadius( float DamageAmount, float DamageRadius, class<Dam
 				Victims.SetDelayedDamageInstigatorController( InstigatorController );
 			if ( Victims == LastTouched )
 				LastTouched = None;
-            if ( bDestoyedByHuman ) {
-                if ( Monster(Victims) != none )    
-                    damageScale *= 20; //do huge amount of damage to monsters if BFG cell is destoryed by human
-                else if ( KFPawn(Victims) != none && dist > DamageRadius*0.5 )
-                    continue; // twice smaller damage radius to humans if they destroyed BFG cell in mid-air
-            }
+			if ( bDestoyedByHuman ) {
+				if ( Monster(Victims) != none )
+					damageScale *= 20; //do huge amount of damage to monsters if BFG cell is destoryed by human
+				else if ( KFPawn(Victims) != none && dist > DamageRadius*0.5 )
+					continue; // twice smaller damage radius to humans if they destroyed BFG cell in mid-air
+			}
 			if ( KFPawn(Victims) != none )
 				PlayerHits += 10;
 			Victims.TakeDamage
@@ -181,39 +205,41 @@ simulated function HurtRadius( float DamageAmount, float DamageRadius, class<Dam
 
 defaultproperties
 {
-     NewImpactSounds(0)=Sound'2009DoomMonstersSounds.BFG.bfg_explode1'
-     NewImpactSounds(1)=Sound'2009DoomMonstersSounds.BFG.bfg_explode2'
-     NewImpactSounds(2)=Sound'2009DoomMonstersSounds.BFG.bfg_explode3'
-     NewImpactSounds(3)=Sound'2009DoomMonstersSounds.BFG.bfg_explode4'
-     GreenArcs(0)=Class'ScrnDoom3KF.SabaothProjArc'
-     GreenArcs(1)=Class'ScrnDoom3KF.SabaothProjArcFat'
-     ArcSounds(0)=Sound'2009DoomMonstersSounds.BFG.arc_1'
-     ArcSounds(1)=Sound'2009DoomMonstersSounds.BFG.arc_3'
-     ArcSounds(2)=Sound'2009DoomMonstersSounds.BFG.arc_4'
-     Speed=1000.000000
-     MaxSpeed=1150.000000
-     Damage=50 // 60
-     DamageRadius=250.000000
-     MomentumTransfer=10000.000000
-     MyDamageType=Class'ScrnDoom3KF.DamTypeSabaothProj'
-     ExplosionDecal=Class'ScrnDoom3KF.SabaothProjDecal'
-     LightType=LT_Steady
-     LightEffect=LE_QuadraticNonIncidence
-     LightHue=106
-     LightSaturation=104
-     LightBrightness=169.000000
-     LightRadius=4.000000
-     DrawType=DT_None
-     bDynamicLight=True
-     bNetTemporary=False
-     AmbientSound=Sound'2009DoomMonstersSounds.BFG.bfg_fly'
-     LifeSpan=10.000000
-     DrawScale=0.200000
-     SoundVolume=255
-     SoundRadius=250.000000
-     TransientSoundVolume=1.500000
-     TransientSoundRadius=450.000000
-     CollisionRadius=16.000000
-     CollisionHeight=16.000000
-     bProjTarget=True
+	 NewImpactSounds(0)=Sound'2009DoomMonstersSounds.BFG.bfg_explode1'
+	 NewImpactSounds(1)=Sound'2009DoomMonstersSounds.BFG.bfg_explode2'
+	 NewImpactSounds(2)=Sound'2009DoomMonstersSounds.BFG.bfg_explode3'
+	 NewImpactSounds(3)=Sound'2009DoomMonstersSounds.BFG.bfg_explode4'
+	 GreenArcs(0)=Class'ScrnDoom3KF.SabaothProjArc'
+	 GreenArcs(1)=Class'ScrnDoom3KF.SabaothProjArcFat'
+	 ArcSounds(0)=Sound'2009DoomMonstersSounds.BFG.arc_1'
+	 ArcSounds(1)=Sound'2009DoomMonstersSounds.BFG.arc_3'
+	 ArcSounds(2)=Sound'2009DoomMonstersSounds.BFG.arc_4'
+	 Speed=1000.000000
+	 MaxSpeed=1150.000000
+	 Damage=50 // 60
+	 DamageRadius=250.000000
+	 MomentumTransfer=10000.000000
+	 MyDamageType=Class'ScrnDoom3KF.DamTypeSabaothProj'
+	 ExplosionDecal=Class'ScrnDoom3KF.SabaothProjDecal'
+	 LightType=LT_Steady
+	 LightEffect=LE_QuadraticNonIncidence
+	 LightHue=106
+	 LightSaturation=104
+	 LightBrightness=169.000000
+	 LightRadius=4.000000
+	 DrawType=DT_None
+	 bDynamicLight=True
+	 bNetTemporary=False
+	 AmbientSound=Sound'2009DoomMonstersSounds.BFG.bfg_fly'
+	 LifeSpan=10.000000
+	 DrawScale=0.200000
+	 SoundVolume=255
+	 SoundRadius=250.000000
+	 TransientSoundVolume=1.500000
+	 TransientSoundRadius=450.000000
+	 CollisionRadius=16.000000
+	 CollisionHeight=16.000000
+	 bProjTarget=True
+	 Health=100
+	 ChargeTime=1.0
 }

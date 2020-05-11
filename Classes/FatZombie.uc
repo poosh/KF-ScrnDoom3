@@ -113,7 +113,7 @@ defaultproperties
      FireRifleBurstAnim="Idle"
      RagdollOverride="D3FatZombie"
      bCanJump=False
-     GroundSpeed=105.000000
+     GroundSpeed=120 // 105
      HeadRadius=12.000000
      MenuName="Fat Zombie"
      MovementAnims(0)="Walk01"

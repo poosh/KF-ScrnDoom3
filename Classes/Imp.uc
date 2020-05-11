@@ -406,6 +406,9 @@ defaultproperties
      ColHeight=55
 
      MotionDetectorThreat=0.50 //5.14
-     
+
      ZappedDamageMod=1.5
-}
+
+     LeftFArmBone="lhand"
+     RightFArmBone="rhand"
+ }

@@ -1,4 +1,4 @@
-Class GuardianAI extends Doom3Controller;
+Class GuardianAI extends DoomBossAI;
 
 function FightEnemy(bool bCanCharge)
 {

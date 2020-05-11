@@ -1,4 +1,4 @@
-class CyberDemon extends DoomMonster;
+class CyberDemon extends DoomBoss;
 
 var() Material WeaponFlashLight[4];
 var(Anims) name RangedAttackAnims[3];

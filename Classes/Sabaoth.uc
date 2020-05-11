@@ -1,4 +1,4 @@
-class Sabaoth extends DoomMonster;
+class Sabaoth extends DoomBoss;
 
 var transient float MultiAttackTime;
 var(Sounds) Sound Laughs[3],PreFireSound;

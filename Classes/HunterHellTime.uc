@@ -1,4 +1,4 @@
-class HunterHellTime extends DoomMonster;
+class HunterHellTime extends DoomBoss;
 
 var transient float NextRangedTime;
 var bool bTeleportNow;

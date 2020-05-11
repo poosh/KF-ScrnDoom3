@@ -1,4 +1,4 @@
-class Guardian extends DoomMonster;
+class Guardian extends DoomBoss;
 
 var(Sounds) Sound GroundSlamSound;
 var() class<DamageType> ShockWaveDamageType;

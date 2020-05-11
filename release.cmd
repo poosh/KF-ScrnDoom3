@@ -2,9 +2,9 @@
 
 
 setlocal
-set KFDIR=d:\Games\kf
+set KFDIR=c:\Games\kf
 set STEAMDIR=c:\Steam\steamapps\common\KillingFloor
-set outputdir=D:\KFOut\ScrnDoom3KF
+set outputdir=c:\Games\KFOut\ScrnDoom3KF
 
 
 echo Removing previous release files...
@@ -27,6 +27,7 @@ mkdir %outputdir%\uz2
 
 copy /y %KFDIR%\system\ScrnDoom3KF.* %outputdir%\system\
 copy /y *.txt  %outputdir%
+copy /y *.md   %outputdir%
 copy /y *.ini  %outputdir%
 
 

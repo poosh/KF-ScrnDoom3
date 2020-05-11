@@ -5,7 +5,7 @@
 class Doom3Mutator extends Mutator
 	Config(Doom3KF);
 
-const VERSION = 94700;
+const VERSION = 96200;
 var localized string strVersion;
 
 var config float MinDoomPct,MaxDoomPct;
@@ -15,7 +15,7 @@ var float WaveSpawnRate;
 var transient int SquadCounter;
 var config float MinSpawnDelay,MaxSpawnDelay;
 var config float BossWaveReduction,BossWaveRate,BossStartWaves,BossPerPlayerHP,PatBossMult;
-var config bool bSpawnMonsters, bSpawnSuperMonsters;
+var config bool bSpawnMonsters, bSpawnSuperMonsters, bReplaceEndGameBoss;
 var config array<string> LargeMaps,LargeBosses,NormalBosses,MonsterClasses,PatReplacement,LargePatReplacement;
 var bool bBigMap;
 
@@ -29,29 +29,31 @@ var const array< class<Actor> > PrecacheClasses;
 var Doom3GameRules GameRules;
 
 
-static function string GetVersionStr()
+static final function string GetVersionStr()
 {
-    local String msg, s;
-    local int v, sub_v;
+	local String msg;
+	local int v;
+	local byte major, minor, patch;
 
-    msg = default.strVersion;
-    v = VERSION / 100;
-    sub_v = VERSION % 100;
+	msg = default.strVersion;
+	v = VERSION;
+	// for some reason, UnrealScript has operator % declared only for float not for int.
+	// So we can't use % here do to precision
+	major = v / 10000; v -= major * 10000;
+	minor = v / 100;   v -= minor * 100;
+	patch = v;
 
-    s = String(int(v%100));
-    if ( len(s) == 1 )
-        s = "0" $ s;
-    if ( sub_v > 0 )
-        s @= "(BETA "$sub_v$")";
-    ReplaceText(msg, "%n", s);
+	ReplaceText(msg, "%m", string(major));
+	if (minor < 10) {
+		ReplaceText(msg, "%n", "0" $ string(minor));
+	}
+	else {
+		ReplaceText(msg, "%n", string(minor));
+	}
+	ReplaceText(msg, "%p", string(patch));
 
-    s = String(v/100);
-    ReplaceText(msg, "%m",s);
-
-    return msg;
+	return msg;
 }
-
-
 
 function PostBeginPlay()
 {
@@ -61,100 +63,86 @@ function PostBeginPlay()
 	KF = KFGameType(Level.Game);
 	if( KF==None ) {
 		Error("This mutator is only for KFGameType!");
-        Destroy();
-        return;
-    }
+		Destroy();
+		return;
+	}
 
-    GameRules = Spawn(Class'ScrnDoom3KF.Doom3GameRules', self);
-    if ( GameRules != none ) {
-        GameRules.Mut = self;
-    }
-    else {
-        log("Unable to spawn Game Rules!", class.outer.name);
-    }
-    class'ScrnDoom3KF.Doom3Controller'.default.TeleportDestinations.length = 0; // reset navigation points
+	GameRules = Spawn(Class'ScrnDoom3KF.Doom3GameRules', self);
+	if ( GameRules != none ) {
+		GameRules.Mut = self;
+	}
+	else {
+		log("Unable to spawn Game Rules!", class.outer.name);
+	}
+	class'ScrnDoom3KF.Doom3Controller'.default.TeleportDestinations.length = 0; // reset navigation points
 
 
-    bBigMap = false;
-    if( LargeMaps.Length>0 ) {
-        for( i=(LargeMaps.Length-1); i>=0; --i )
-            if( LargeMaps[i]~=string(Outer.Name) ) {
-                bBigMap = true;
-                break;
-            }
-    }
+	bBigMap = false;
+	if( LargeMaps.Length>0 ) {
+		for( i=(LargeMaps.Length-1); i>=0; --i )
+			if( LargeMaps[i]~=string(Outer.Name) ) {
+				bBigMap = true;
+				break;
+			}
+	}
 
-    // END - GAME BOSS
-    if( !bBigMap ) {
-        if( PatReplacement.Length>0 && PatReplacement[0]!="None" )
-            KF.EndGameBossClass = PatReplacement[Rand(PatReplacement.Length)];
-    }
-    else {
-        if( LargePatReplacement.Length>0 && LargePatReplacement[0]!="None" )
-            KF.EndGameBossClass = LargePatReplacement[Rand(LargePatReplacement.Length)];
-    }
-    if( InStr(KF.EndGameBossClass,".")==-1 )
-        KF.EndGameBossClass = string(Class.Outer.Name)$"."$KF.EndGameBossClass;
+	// END - GAME BOSS
+	if( bReplaceEndGameBoss )
+	{
+		if( !bBigMap ) {
+			if( PatReplacement.Length>0 && PatReplacement[0]!="None" )
+			KF.EndGameBossClass = PatReplacement[Rand(PatReplacement.Length)];
+		}
+		else {
+			if( LargePatReplacement.Length>0 && LargePatReplacement[0]!="None" )
+			KF.EndGameBossClass = LargePatReplacement[Rand(LargePatReplacement.Length)];
+		}
+		if( InStr(KF.EndGameBossClass,".")==-1 )
+			KF.EndGameBossClass = string(Class.Outer.Name)$"."$KF.EndGameBossClass;
 
-    // if server admin specified boss class name wrong
-    if ( Class<KFMonster>(DynamicLoadObject(KF.EndGameBossClass,Class'Class')) == none ) {
-        log("Unable to load end game boss class: " $ KF.EndGameBossClass, class.outer.name);
-        KF.EndGameBossClass = string(Class.Outer.Name)$".Sabaoth";
-    }
-    // new squad system
-    KF.MonsterCollection.default.EndGameBossClass = KF.EndGameBossClass;
+		// if server admin specified boss class name wrong
+		if ( Class<KFMonster>(DynamicLoadObject(KF.EndGameBossClass,Class'Class')) == none ) {
+			log("Unable to load end game boss class: " $ KF.EndGameBossClass, class.outer.name);
+			KF.EndGameBossClass = string(Class.Outer.Name)$".Sabaoth";
+		}
+		// new squad system
+		KF.MonsterCollection.default.EndGameBossClass = KF.EndGameBossClass;
+	}
 
-    // MID-GAME BOSSES
-    if( bSpawnSuperMonsters ) {
-        for( i=0; i<NormalBosses.Length; ++i ) {
-            M = LoadClass(NormalBosses[i]);
-            if( M!=None )
-                Bosses[Bosses.Length] = M;
-        }
-        if ( bBigMap ) {
-            for( i=0; i<LargeBosses.Length; ++i ) {
-                M = LoadClass(LargeBosses[i]);
-                if( M!=None )
-                    Bosses[Bosses.Length] = M;
-            }
-        }
-    }
+	// MID-GAME BOSSES
+	if( bSpawnSuperMonsters ) {
+		for( i=0; i<NormalBosses.Length; ++i ) {
+			M = LoadClass(NormalBosses[i]);
+			if( M!=None )
+				Bosses[Bosses.Length] = M;
+		}
+		if ( bBigMap ) {
+			for( i=0; i<LargeBosses.Length; ++i ) {
+				M = LoadClass(LargeBosses[i]);
+				if( M!=None )
+					Bosses[Bosses.Length] = M;
+			}
+		}
+	}
 
-    // REGULAR ZEDS
-    for( i=0; i<MonsterClasses.Length; ++i ) {
-        M = LoadClass(MonsterClasses[i]);
-        if( M!=None )
-            Doom3Mobs[Doom3Mobs.Length] = M;
-    }
+	// REGULAR ZEDS
+	for( i=0; i<MonsterClasses.Length; ++i ) {
+		M = LoadClass(MonsterClasses[i]);
+		if( M!=None )
+			Doom3Mobs[Doom3Mobs.Length] = M;
+	}
 
-    SetTimer(3,true);
-
-    if (bSpawnMonsters)
-        GotoState('AddingD3Squads');
+	// XXX: Do not use self.GotoState() in PostBeginPlay() because after returning from the PostBeginPlay(), the
+	// actor goes into its auto state ('' if the auto state is not set).
 }
-final function class<KFMonster> LoadClass( string S )
+
+function class<KFMonster> LoadClass( string S )
 {
 	if( InStr(S,".")==-1 )
 		S = string(Class.Outer.Name)$"."$S;
 	return Class<KFMonster>(DynamicLoadObject(S,Class'Class'));
 }
-function Timer()
-{
-	if( KF.bWaveInProgress && LastScannedWave != KF.WaveNum ) {
-		LastScannedWave = KF.WaveNum;
 
-		if( KF.WaveNum < KF.FinalWave )
-			ProgressPct = FClamp(float(KF.WaveNum+2)/float(KF.FinalWave),0.1f,1.f);
-		else
-            ProgressPct = 2.f;
-
-		if( bSpawnSuperMonsters && KF.WaveNum < KF.FinalWave
-                && KF.WaveNum > (KF.FinalWave*BossStartWaves-0.001) && FRand() < BossWaveRate )
-        {
-			TryToAddBoss();
-        }
-	}
-}
 final function rotator GetRandDir()
 {
 	local rotator R;
@@ -182,7 +170,7 @@ final function TryToAddBoss()
 	local class<KFMonster> TryMonster;
 	local VolumeColTester Tst;
 
-	if( Bosses.Length==0 )
+	if( Bosses.Length == 0 )
 		return;
 	for( N=Level.NavigationPointList; N!=None; N=N.NextNavigationPoint )
 	{
@@ -242,57 +230,114 @@ static event string GetDescriptionText(string PropName)
 		case "BossPerPlayerHP":		return "In percent, how much additional health bosses get per additional player (0.0 = none, 1.0 = double).";
 		case "PatBossMult": 		return "How many times Patriarch Replacement's HP is bigger than in-wave boss's (1.0 = same, 2.0 = double).";
 	}
-    return Super.GetDescriptionText(PropName);
+	return Super.GetDescriptionText(PropName);
 }
 
-state AddingD3Squads
+state AddingSuperMonsters
 {
+	function BeginState()
+	{
+		log("Demon mid-game bosses spawning enabled", 'Doom3');
+		SetTimer(3, true);
+	}
+
+	function EndState()
+	{
+		log("Demon spawning disabled", 'Doom3');
+		SetTimer(0, false);
+	}
+
+	function Timer()
+	{
+		if( KF.bWaveInProgress && LastScannedWave != KF.WaveNum ) {
+			LastScannedWave = KF.WaveNum;
+
+			if( KF.WaveNum < KF.FinalWave ) {
+				ProgressPct = FClamp(float(KF.WaveNum+2)/float(KF.FinalWave),0.1f,1.f);
+			}
+			else {
+				ProgressPct = 2.f;
+			}
+
+			if( bSpawnSuperMonsters && KF.WaveNum < KF.FinalWave
+					&& KF.WaveNum >= int(KF.FinalWave*BossStartWaves+0.01) && FRand() < BossWaveRate )
+			{
+				TryToAddBoss();
+			}
+		}
+	}
+}
+
+state AddingD3Squads extends AddingSuperMonsters
+{
+	function BeginState()
+	{
+		log("Demon spawning enabled", 'Doom3');
+		super.BeginState();
+	}
+
 	function AddDoom3Mobs(byte MaxAmmount)
 	{
 		local class<KFMonster> DC;
 		local byte i;
 
-        // don't build squads larger than 6 mobs, because they may have trouble to spawn
-        if ( KF.NextSpawnSquad.Length >= 6 )
-            return;
-        MaxAmmount = min(MaxAmmount, 6 - KF.NextSpawnSquad.Length);
-        if ( MaxAmmount > 0 && SquadCounter != KF.SquadsToUse.Length ) {
-            for( i=0; i<MaxAmmount; ++i ) {
-                DC = Doom3Mobs[Min(FRand()*ProgressPct*(Doom3Mobs.Length+2),Doom3Mobs.Length-1)];
-                if( DC!=None )
-                    KF.NextSpawnSquad[KF.NextSpawnSquad.Length] = DC;
-            }
-            KF.LastZVol = KF.FindSpawningVolume();
-            if ( KF.LastZVol != none )
-                KF.LastSpawningVolume = KF.LastZVol;
-            // prevent adding doom mobs twice in the same squad
-            SquadCounter = KF.SquadsToUse.Length;
-        }
+		// don't build squads larger than 6 mobs, because they may have trouble to spawn
+		if ( KF.NextSpawnSquad.Length >= 6 )
+			return;
+		MaxAmmount = min(MaxAmmount, 6 - KF.NextSpawnSquad.Length);
+		if ( MaxAmmount > 0 && SquadCounter != KF.SquadsToUse.Length ) {
+			for( i=0; i<MaxAmmount; ++i ) {
+				DC = Doom3Mobs[Min(FRand()*ProgressPct*(Doom3Mobs.Length+2),Doom3Mobs.Length-1)];
+				if( DC!=None )
+					KF.NextSpawnSquad[KF.NextSpawnSquad.Length] = DC;
+			}
+			KF.LastZVol = KF.FindSpawningVolume();
+			if ( KF.LastZVol != none )
+				KF.LastSpawningVolume = KF.LastZVol;
+			// prevent adding doom mobs twice in the same squad
+			SquadCounter = KF.SquadsToUse.Length;
+		}
 	}
 
 Begin:
 	while( ProgressPct<=1.f && !KF.bGameEnded ) {
-        if ( !KF.bWaveInProgress || KF.TotalMaxMonsters <= 0 ) {
-            sleep(1.0);
-            continue;
-        }
+		if ( !KF.bWaveInProgress || KF.TotalMaxMonsters <= 0 ) {
+			sleep(1.0);
+			continue;
+		}
 
-        WaveSpawnRate = KF.KFLRules.WaveSpawnPeriod / KF.KFLRules.default.WaveSpawnPeriod;
-        if ( DoomPct < MinDoomPct && KF.WaveNum > 0 ) {
-            // not enough doom monsters - spawn as fast as possible
-            AddDoom3Mobs(2+rand(3));
-            Sleep(MinSpawnDelay * fmax(1.0, WaveSpawnRate));
-        }
-        else if ( DoomPct > MaxDoomPct && KF.WaveNum > 0 ) {
-            Sleep(MaxSpawnDelay);
-            // too many doom monsters - do a maximum cooldown
-            AddDoom3Mobs(1);
-            Sleep(MinSpawnDelay);
-        }
-        else {
-            AddDoom3Mobs(1+rand(4));
-            Sleep(RandRange(MinSpawnDelay*WaveSpawnRate,MaxSpawnDelay));
-        }
+		WaveSpawnRate = KF.KFLRules.WaveSpawnPeriod / KF.KFLRules.default.WaveSpawnPeriod;
+		if ( DoomPct < MinDoomPct && KF.WaveNum > 0 ) {
+			// not enough doom monsters - spawn as fast as possible
+			AddDoom3Mobs(2+rand(3));
+			Sleep(MinSpawnDelay * fmax(1.0, WaveSpawnRate));
+		}
+		else if ( DoomPct > MaxDoomPct && KF.WaveNum > 0 ) {
+			Sleep(MaxSpawnDelay);
+			// too many doom monsters - do a maximum cooldown
+			AddDoom3Mobs(1);
+			Sleep(MinSpawnDelay);
+		}
+		else {
+			AddDoom3Mobs(1+rand(4));
+			Sleep(RandRange(MinSpawnDelay*WaveSpawnRate,MaxSpawnDelay));
+		}
+	}
+}
+
+auto state PrepareDemonSpawn
+{
+	function BeginState()
+	{
+		if (bSpawnMonsters) {
+			GotoState('AddingD3Squads');
+		}
+		else  if (bSpawnSuperMonsters) {
+			GotoState('AddingSuperMonsters');
+		}
+		else {
+			GotoState('');
+		}
 	}
 }
 
@@ -301,7 +346,7 @@ function GetServerDetails( out GameInfo.ServerResponseLine ServerState )
 	// append the mutator name.
 	local int i;
 
-    super.GetServerDetails(ServerState);
+	super.GetServerDetails(ServerState);
 
 	i = ServerState.ServerInfo.Length;
 	ServerState.ServerInfo.insert(i, 2);
@@ -315,14 +360,13 @@ function GetServerDetails( out GameInfo.ServerResponseLine ServerState )
 
 function bool CheckReplacement(Actor Other, out byte bSuperRelevant)
 {
-    if ( KFMonsterController(Other) != none ) {
-        TotalMonsters++;
-        if( Doom3Controller(Other)!=None ) {
-            Doom3Controller(Other).bCanTele = true;
-            DoomMonsters++;
-        }
-        DoomPct = float(DoomMonsters) / TotalMonsters;
-    }
+	if ( KFMonsterController(Other) != none ) {
+		TotalMonsters++;
+		if( Doom3Controller(Other)!=None ) {
+			DoomMonsters++;
+		}
+		DoomPct = float(DoomMonsters) / TotalMonsters;
+	}
 	return true;
 }
 
@@ -331,7 +375,7 @@ function Mutate(string MutateString, PlayerController Sender)
 	if( MutateString~="BigMap" || MutateString~="LargeMap" ) {
 		if( Level.NetMode==NM_StandAlone || Sender.PlayerReplicationInfo.bAdmin ) {
 			MakeBigMap();
-            bBigMap = true;
+			bBigMap = true;
 			Sender.ClientMessage(string(Outer.Name)@"has been made large map.");
 		}
 		return;
@@ -339,21 +383,21 @@ function Mutate(string MutateString, PlayerController Sender)
 	else if( MutateString~="SmallMap" ) {
 		if( Level.NetMode==NM_StandAlone || Sender.PlayerReplicationInfo.bAdmin ) {
 			MakeSmallMap();
-            bBigMap = false;
+			bBigMap = false;
 			Sender.ClientMessage(string(Outer.Name)@"has been made small map.");
 		}
 		return;
 	}
-    else if( MutateString~="IsBigMap" || MutateString~="IsSmallMap" )
-        Sender.ClientMessage(string(Outer.Name)@"is a "$eval(bBigMap, "big", "small")$" map.");
-    else if( MutateString~="DoomStat" || MutateString~="DoomStats" )
-        Sender.ClientMessage("DooM monsters spawned in the game: " $ DoomMonsters$"/"$TotalMonsters
-            $ ", " $ string(DoomPct*100)$"%");
+	else if( MutateString~="IsBigMap" || MutateString~="IsSmallMap" )
+		Sender.ClientMessage(string(Outer.Name)@"is a "$eval(bBigMap, "big", "small")$" map.");
+	else if( MutateString~="DoomStat" || MutateString~="DoomStats" )
+		Sender.ClientMessage("DooM monsters spawned in the game: " $ DoomMonsters$"/"$TotalMonsters
+			$ ", " $ string(DoomPct*100)$"%");
 
-    super.Mutate(MutateString, Sender);
+	super.Mutate(MutateString, Sender);
 
-    if ( MutateString ~= "version" )
-        Sender.ClientMessage(FriendlyName @ GetVersionStr());
+	if ( MutateString ~= "version" )
+		Sender.ClientMessage(FriendlyName @ GetVersionStr());
 }
 
 final function MakeBigMap()
@@ -396,99 +440,100 @@ simulated function UpdatePrecacheMaterials()
 
 defaultproperties
 {
-    MinDoomPct=0.10
-    MaxDoomPct=0.20
-    WaveSpawnRate=1.0
-    MinSpawnDelay=5.0
-    MaxSpawnDelay=35.000000
-    BossWaveReduction=0.250000
-    BossWaveRate=0.450000
-    BossStartWaves=0.400000
-    BossPerPlayerHP=0.75
-    PatBossMult=2.5
-    LastScannedWave=-1;
-    bSpawnMonsters=true
-    bSpawnSuperMonsters=True
-    LargeMaps(0)="KF-WestLondon"
-    LargeMaps(1)="KF-Manor"
-    LargeMaps(2)="KF-Farm"
-    LargeMaps(3)="kf-mountainpass"
-    LargeMaps(4)="kf-abusementpark"
-    LargeMaps(5)="kf-icebreaker"
-    LargeMaps(6)="kf-suburbia"
-    LargeMaps(7)="kf-wyre"
-    LargeBosses(0)="Cyberdemon"
-    LargeBosses(1)="Guardian"
-    LargeBosses(2)="HunterBerserk"
-    LargeBosses(3)="HunterHellTime"
-    NormalBosses(0)="Sabaoth"
-    NormalBosses(1)="Vagary"
-    NormalBosses(2)="Maledict"
-    NormalBosses(3)="HunterInvul"
-    MonsterClasses(0)="Boney"
-    MonsterClasses(1)="FatZombie"
-    MonsterClasses(2)="Imp"
-    MonsterClasses(3)="Tick"
-    MonsterClasses(4)="Trite"
-    MonsterClasses(5)="Sawyer"
-    MonsterClasses(6)="Pinky"
-    MonsterClasses(7)="Maggot"
-    MonsterClasses(8)="LostSoul"
-    MonsterClasses(9)="Cherub"
-    MonsterClasses(10)="Cacodemon"
-    MonsterClasses(11)="Wraith"
-    MonsterClasses(12)="Revenant"
-    MonsterClasses(13)="Vulgar"
-    MonsterClasses(14)="Commando"
-    MonsterClasses(15)="Mancubus"
-    MonsterClasses(16)="Archvile"
-    MonsterClasses(17)="Bruiser"
-    MonsterClasses(18)="Forgotten"
-    MonsterClasses(19)="HellKnight"
-    PatReplacement(0)="Patriarch"
-    PatReplacement(1)="Sabaoth"
-    PatReplacement(2)="Maledict"
-    PatReplacement(3)="HunterInvul"
-    LargePatReplacement(0)="Patriarch"
-    LargePatReplacement(1)="Cyberdemon"
-    LargePatReplacement(2)="Maledict"
-    LargePatReplacement(3)="HunterHellTime"
-    ProgressPct=0.100000
-    PrecacheClasses(0)=Class'ScrnDoom3KF.CyberDemon'
-    PrecacheClasses(1)=Class'ScrnDoom3KF.Guardian'
-    PrecacheClasses(2)=Class'ScrnDoom3KF.HunterBerserk'
-    PrecacheClasses(3)=Class'ScrnDoom3KF.HunterHellTime'
-    PrecacheClasses(4)=Class'ScrnDoom3KF.Sabaoth'
-    PrecacheClasses(5)=Class'ScrnDoom3KF.Vagary'
-    PrecacheClasses(6)=Class'ScrnDoom3KF.Maledict'
-    PrecacheClasses(7)=Class'ScrnDoom3KF.HunterInvul'
-    PrecacheClasses(8)=Class'ScrnDoom3KF.Boney'
-    PrecacheClasses(9)=Class'ScrnDoom3KF.FatZombie'
-    PrecacheClasses(10)=Class'ScrnDoom3KF.Imp'
-    PrecacheClasses(11)=Class'ScrnDoom3KF.Tick'
-    PrecacheClasses(12)=Class'ScrnDoom3KF.Trite'
-    PrecacheClasses(13)=Class'ScrnDoom3KF.Sawyer'
-    PrecacheClasses(14)=Class'ScrnDoom3KF.Pinky'
-    PrecacheClasses(15)=Class'ScrnDoom3KF.Maggot'
-    PrecacheClasses(16)=Class'ScrnDoom3KF.LostSoul'
-    PrecacheClasses(17)=Class'ScrnDoom3KF.Cherub'
-    PrecacheClasses(18)=Class'ScrnDoom3KF.Cacodemon'
-    PrecacheClasses(19)=Class'ScrnDoom3KF.Wraith'
-    PrecacheClasses(20)=Class'ScrnDoom3KF.Revenant'
-    PrecacheClasses(21)=Class'ScrnDoom3KF.Vulgar'
-    PrecacheClasses(22)=Class'ScrnDoom3KF.Commando'
-    PrecacheClasses(23)=Class'ScrnDoom3KF.Mancubus'
-    PrecacheClasses(24)=Class'ScrnDoom3KF.Archvile'
-    PrecacheClasses(25)=Class'ScrnDoom3KF.Bruiser'
-    PrecacheClasses(26)=Class'ScrnDoom3KF.Forgotten'
-    PrecacheClasses(27)=Class'ScrnDoom3KF.HellKnight'
-    bAddToServerPackages=True
-    GroupName="KF-MonsterMut"
-    FriendlyName="Doom 3 Monsters Mode - ScrN Edition"
-    Description="Do invasion of doom 3 creatures. Mod altered by [ScrN]PooSH. Original authors: Marco, INIQUITOUS."
-    RulesGroup="DoomIII"
-    bAlwaysRelevant=True
-    RemoteRole=ROLE_SimulatedProxy
-    NetUpdateFrequency=1.000000
-    strVersion="v%m.%n"
+	MinDoomPct=0.10
+	MaxDoomPct=0.20
+	WaveSpawnRate=1.0
+	MinSpawnDelay=5.0
+	MaxSpawnDelay=35.000000
+	BossWaveReduction=0.250000
+	BossWaveRate=0.450000
+	BossStartWaves=0.400000
+	BossPerPlayerHP=0.75
+	PatBossMult=2.5
+	LastScannedWave=-1;
+	bSpawnMonsters=true
+	bSpawnSuperMonsters=true
+	bReplaceEndGameBoss=true
+	LargeMaps(0)="KF-WestLondon"
+	LargeMaps(1)="KF-Manor"
+	LargeMaps(2)="KF-Farm"
+	LargeMaps(3)="kf-mountainpass"
+	LargeMaps(4)="kf-abusementpark"
+	LargeMaps(5)="kf-icebreaker"
+	LargeMaps(6)="kf-suburbia"
+	LargeMaps(7)="kf-wyre"
+	LargeBosses(0)="Cyberdemon"
+	LargeBosses(1)="Guardian"
+	LargeBosses(2)="HunterBerserk"
+	LargeBosses(3)="HunterHellTime"
+	NormalBosses(0)="Sabaoth"
+	NormalBosses(1)="Vagary"
+	NormalBosses(2)="Maledict"
+	NormalBosses(3)="HunterInvul"
+	MonsterClasses(0)="Boney"
+	MonsterClasses(1)="FatZombie"
+	MonsterClasses(2)="Imp"
+	MonsterClasses(3)="Tick"
+	MonsterClasses(4)="Trite"
+	MonsterClasses(5)="Sawyer"
+	MonsterClasses(6)="Pinky"
+	MonsterClasses(7)="Maggot"
+	MonsterClasses(8)="LostSoul"
+	MonsterClasses(9)="Cherub"
+	MonsterClasses(10)="Cacodemon"
+	MonsterClasses(11)="Wraith"
+	MonsterClasses(12)="Revenant"
+	MonsterClasses(13)="Vulgar"
+	MonsterClasses(14)="Commando"
+	MonsterClasses(15)="Mancubus"
+	MonsterClasses(16)="Archvile"
+	MonsterClasses(17)="Bruiser"
+	MonsterClasses(18)="Forgotten"
+	MonsterClasses(19)="HellKnight"
+	PatReplacement(0)="Patriarch"
+	PatReplacement(1)="Sabaoth"
+	PatReplacement(2)="Maledict"
+	PatReplacement(3)="HunterInvul"
+	LargePatReplacement(0)="Patriarch"
+	LargePatReplacement(1)="Cyberdemon"
+	LargePatReplacement(2)="Maledict"
+	LargePatReplacement(3)="HunterHellTime"
+	ProgressPct=0.100000
+	PrecacheClasses(0)=Class'ScrnDoom3KF.CyberDemon'
+	PrecacheClasses(1)=Class'ScrnDoom3KF.Guardian'
+	PrecacheClasses(2)=Class'ScrnDoom3KF.HunterBerserk'
+	PrecacheClasses(3)=Class'ScrnDoom3KF.HunterHellTime'
+	PrecacheClasses(4)=Class'ScrnDoom3KF.Sabaoth'
+	PrecacheClasses(5)=Class'ScrnDoom3KF.Vagary'
+	PrecacheClasses(6)=Class'ScrnDoom3KF.Maledict'
+	PrecacheClasses(7)=Class'ScrnDoom3KF.HunterInvul'
+	PrecacheClasses(8)=Class'ScrnDoom3KF.Boney'
+	PrecacheClasses(9)=Class'ScrnDoom3KF.FatZombie'
+	PrecacheClasses(10)=Class'ScrnDoom3KF.Imp'
+	PrecacheClasses(11)=Class'ScrnDoom3KF.Tick'
+	PrecacheClasses(12)=Class'ScrnDoom3KF.Trite'
+	PrecacheClasses(13)=Class'ScrnDoom3KF.Sawyer'
+	PrecacheClasses(14)=Class'ScrnDoom3KF.Pinky'
+	PrecacheClasses(15)=Class'ScrnDoom3KF.Maggot'
+	PrecacheClasses(16)=Class'ScrnDoom3KF.LostSoul'
+	PrecacheClasses(17)=Class'ScrnDoom3KF.Cherub'
+	PrecacheClasses(18)=Class'ScrnDoom3KF.Cacodemon'
+	PrecacheClasses(19)=Class'ScrnDoom3KF.Wraith'
+	PrecacheClasses(20)=Class'ScrnDoom3KF.Revenant'
+	PrecacheClasses(21)=Class'ScrnDoom3KF.Vulgar'
+	PrecacheClasses(22)=Class'ScrnDoom3KF.Commando'
+	PrecacheClasses(23)=Class'ScrnDoom3KF.Mancubus'
+	PrecacheClasses(24)=Class'ScrnDoom3KF.Archvile'
+	PrecacheClasses(25)=Class'ScrnDoom3KF.Bruiser'
+	PrecacheClasses(26)=Class'ScrnDoom3KF.Forgotten'
+	PrecacheClasses(27)=Class'ScrnDoom3KF.HellKnight'
+	bAddToServerPackages=True
+	GroupName="KF-MonsterMut"
+	FriendlyName="Doom 3 Monsters Mode - ScrN Edition"
+	Description="Do invasion of doom 3 creatures. Mod altered by [ScrN]PooSH. Original authors: Marco, INIQUITOUS."
+	RulesGroup="DoomIII"
+	bAlwaysRelevant=True
+	RemoteRole=ROLE_SimulatedProxy
+	NetUpdateFrequency=1.000000
+	strVersion="v%m.%n.%p"
 }
