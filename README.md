@@ -13,6 +13,9 @@ Doom3 Monsters for Killing Floor 1 - ScrN Edition
 # Version History
 *Starting from v5, ScrnDoom3KF version matches the newest version of ScrN Balance available on the release day.*
 
+### v9.62.01
+- Removed debug message from BFG projectile
+
 ### v9.62
 - Restored teleportation ability of Doom monsters. Now, demons may randomly
   teleport from time to time. Small demons do teleport more often.

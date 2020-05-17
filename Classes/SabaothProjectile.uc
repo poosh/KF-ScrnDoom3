@@ -70,7 +70,6 @@ simulated function Explode(vector HitLocation,vector HitNormal)
 	if ( Level.TimeSeconds < ChargeTime ) {
 		Damage *= fmax(0.2, 1.0 - ((ChargeTime - Level.TimeSeconds) / default.ChargeTime));
 	}
-	Level.GetLocalPlayerController().ClientMessage("BFG exploded with Damage " $ Damage $ " / " $ OriginalDamage);
 
 	HurtRadius(Damage, DamageRadius, MyDamageType, MomentumTransfer, HitLocation );
 
