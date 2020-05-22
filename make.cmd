@@ -3,25 +3,26 @@
 setlocal
 color 07
 
-set KFDIR=C:\Games\kf
-set STEAMDIR=c:\Steam\steamapps\common\KillingFloor
-rem remember current directory
 set CURDIR=%~dp0
+call ..\ScrnMakeEnv.cmd %CURDIR%
 
 cd /D %KFDIR%\System
-del ScrnDoom3KF*.u
+del %KFPACKAGE%.u
 
-rem ucc make > %CURDIR%\make.log
-REM ucc make > %CURDIR%\make.log
 ucc make
-set ERR=%ERRORLEVEL%
+set /A ERR=%ERRORLEVEL%
 if %ERR% NEQ 0 goto error
+
 color 0A
+del KillingFloor.log 2>nul
+del steam_appid.txt 2>nul
 
+del %STEAMDIR%\System\KillingFloor.log 2>nul
+del %STEAMDIR%\System\steam_appid.txt 2>nul
 
-del KillingFloor.log
-del steam_appid.txt
-copy ScrnDoom3KF.* %STEAMDIR%\System\
+xcopy /F /I /Y %KFPACKAGE%.u %STEAMDIR%\System\
+xcopy /F /I /Y %KFPACKAGE%.ucl %STEAMDIR%\System\
+xcopy /F /I /Y %KFPACKAGE%.int %STEAMDIR%\System\
 
 echo --------------------------------
 echo Compile successful.
@@ -30,17 +31,11 @@ goto end
 
 :error
 color 0C
-REM type %CURDIR%\make.log
 echo ################################
 echo Compile ERROR! Code = %ERR%.
 echo ################################
-pause
 
 :end
-REM pause
-
-rem return to previous directory
 cd /D %CURDIR%
-
-endlocal & SET EC=%ERR%
-exit /b %EC%
+endlocal & SET _EC=%ERR%
+exit /b %_EC%
