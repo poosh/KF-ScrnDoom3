@@ -101,56 +101,49 @@ function RangedAttack(Actor A)
 	if ( bShotAnim )
 		return;
 
-	if( !bHasRoamed )
+	if( !bHasRoamed ) {
 		RoamAtPlayer();
-	else if( IsInMeleeRange(A) && (MaxMeleeAttacks > 0 || NextRangedAttack >= Level.TimeSeconds) )
-	{
-		MaxMeleeAttacks--;
-
-		if( !bIsInvulnerable && NextRangedAttack<Level.TimeSeconds )
-		{
-			RoamAtPlayer();
-		}
-		else
-		{
-			PrepareStillAttack(A);
-			SetAnimAction(MeleeAnims[0]);
-		}
 	}
-	else if( NextRangedAttack<Level.TimeSeconds )
-	{
-		if (MaxMeleeAttacks <= 0)
+	else if( IsInMeleeRange(A, -50) && MaxMeleeAttacks > 0 ) {
+		MaxMeleeAttacks--;
+		PrepareStillAttack(A);
+		SetAnimAction(MeleeAnims[0]);
+	}
+	else if( NextRangedAttack < Level.TimeSeconds || MaxMeleeAttacks == 0 ) {
+		if (MaxMeleeAttacks <= 0) {
 			MaxMeleeAttacks = rand(default.MaxMeleeAttacks+1);
+			NumMultiFires = 2 + rand(2);
+			NextRangedAttack = Level.TimeSeconds - 1;
+		}
 
-		if( NumMultiFires==0 )
-		{
-			if( FRand()<0.75f )
-			{
+		if( NumMultiFires <= 0 ) {
+			if ( FRand() < 0.75*Health/HealthMax ) {
 				NextRangedAttack = Level.TimeSeconds+0.7f+FRand()*2.f;
 				return;
 			}
-			NumMultiFires = 1+Rand(4);
+			NumMultiFires = Rand(4);
 		}
-		else if( --NumMultiFires==0 )
-		{
+		else if( --NumMultiFires==0 ) {
 			if( Health<1500 )
 				NextRangedAttack = Level.TimeSeconds+0.7f+FRand();
-			else NextRangedAttack = Level.TimeSeconds+1.f+FRand()*3.f;
-			if( FRand()<0.75f )
-				return;
+			else
+				NextRangedAttack = Level.TimeSeconds+1.f+FRand()*3.f;
 		}
-		if( !bIsInvulnerable )
-		{
+
+		if( !bIsInvulnerable ) {
+			NumMultiFires = 0;
 			RoamAtPlayer();
+			NextRangedAttack = Level.TimeSeconds + 3.f + FRand()*2.f;
 		}
-		else if( NextShockwaveTime<Level.TimeSeconds && FRand()<0.6f )
-		{
+		else if( NextShockwaveTime < Level.TimeSeconds && NumMultiFires <= 0 ) {
+			// become vulnerable
 			PrepareStillAttack(A);
 			PlaySound(PreFireSound,SLOT_Interact);
 			SetAnimAction('ShockWave');
 		}
-		else
-		{
+		else {
+			// range attack
+			NextShockwaveTime -= 2.0;  // Hunter uses shield to charge projectile
 			PrepareStillAttack(A);
 			PlaySound(PreFireSound,SLOT_Interact);
 			SetAnimAction(RangedAttacks[Rand(3)]);
@@ -261,7 +254,7 @@ simulated function Charge()
 
 	bIsInvulnerable = true;
 	SetInvulnerability();
-	NextShockwaveTime = Level.TimeSeconds+8.f+FRand()*10.f;
+	NextShockwaveTime = Level.TimeSeconds + 20.f + FRand()*10.f;
 
 	if( Level.NetMode==NM_DedicatedServer )
 		return;
@@ -427,7 +420,7 @@ defaultproperties
      FireRifleBurstAnim="Walk"
      RagdollOverride="D3InvulHunter"
      bCanJump=False
-     MeleeRange=80.000000
+     MeleeRange=150
      GroundSpeed=200.000000
      HealthMax=6500.000000
      Health=6500
@@ -490,7 +483,7 @@ defaultproperties
      CollisionRadius=26
      CollisionHeight=40
      Mass=3000.000000
-	 MaxMeleeAttacks=3
+     MaxMeleeAttacks=3
      RootBone="HK_jaw_2"
      ZapThreshold=3
 }

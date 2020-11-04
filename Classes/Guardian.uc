@@ -4,6 +4,7 @@ var(Sounds) Sound GroundSlamSound;
 var() class<DamageType> ShockWaveDamageType;
 var transient float NextGroundPound,NextChargeTime;
 var Emitter Flames[5];
+var() float ChargeDamageMult;
 var() int ShockDamage;
 var() float ShockRadius;
 var() byte MaxSeekers;
@@ -11,6 +12,12 @@ var() float SeekerRegenTime;
 var byte ChargeCounter,SeekersCount;
 
 var bool bChargingNow,bRegenSeekers,bClientSpawningSeekers;
+
+struct STargetDetection {
+	var Pawn Target;
+	var float DetectTime;
+};
+var transient array<STargetDetection> DetectedTargets;
 
 replication
 {
@@ -34,21 +41,27 @@ simulated function PostBeginPlay()
 		AttachToBone(Flames[3],'tail_12');
 	}
 	bHasRoamed = false;
+
+	ShockDamage = Max((DifficultyDamageModifer() * ShockDamage),1);
+	NextChargeTime = Level.TimeSeconds + 30.0;
 }
 
 function bool NeedNewSeekers()
 {
 	return (MaxSeekers>0 && SeekersCount==0);
 }
+
 function BeginRegen()
 {
 	bRegenSeekers = true;
 	Acceleration = vect(0,0,0);
 	Controller.Focus = None;
 	Controller.FocalPoint = vector(Rotation)*50000.f+Location;
+	DetectedTargets.length = 0;
 	if( Level.NetMode!=NM_DedicatedServer )
 		PostNetReceive();
 }
+
 function SpawnSeekers()
 {
 	local byte i;
@@ -60,11 +73,13 @@ function SpawnSeekers()
 	for( i=0; i<MaxSeekers; i++ ) {
 		S = Seeker(SpawnChild(Class'Seeker',P+VRand()*20.f));
 		if( S!=None ) {
-            S.Mother = Self;
-            SeekersCount++;
-        }
+			S.Mother = Self;
+			SeekersCount++;
+		}
 	}
+	NextChargeTime = fmax(NextChargeTime, Level.TimeSeconds + 10.0);
 }
+
 function EndRegen()
 {
 	bRegenSeekers = false;
@@ -79,13 +94,20 @@ event EncroachedBy( actor Other )
 
 function RangedAttack(Actor A)
 {
+	local float r;
+	local int i;
+
 	if ( bShotAnim )
 		return;
-	if( !bHasRoamed )
+
+	r = frand();
+
+	if( !bHasRoamed ) {
 		RoamAtPlayer();
-	else if( IsInMeleeRange(A) )
-	{
-		if( FRand()<0.33 )
+	}
+	else if( IsInMeleeRange(A) && MaxMeleeAttacks > 0 ) {
+		--MaxMeleeAttacks;
+		if( r < 0.33 )
 		{
 			PrepareStillAttack(A);
 			SetAnimAction('Attack3');
@@ -93,31 +115,77 @@ function RangedAttack(Actor A)
 		else
 		{
 			PrepareMovingAttack(A,1);
-			if( FRand()<0.5 )
+			if( r < 0.66 )
 				SetAnimAction('WalkAttack1');
-			else SetAnimAction('WalkAttack2');
+			else
+				SetAnimAction('WalkAttack2');
 		}
-	}
-	else if( NextGroundPound<Level.TimeSeconds )
-	{
-		NextGroundPound = Level.TimeSeconds+4+FRand()*10.f;
-		if( FRand()<0.3 )
-			return;
-		PrepareStillAttack(A);
-		if( FRand()<0.33 )
-			SetAnimAction('Attack1');
-		else if( FRand()<0.33 )
-			SetAnimAction('Attack2');
-		else SetAnimAction('RangedAttack');
 	}
 	else if( NextChargeTime<Level.TimeSeconds && Controller!=None && Controller.ActorReachable(A) )
 	{
-		NextChargeTime = Level.TimeSeconds+4+FRand()*10.f;
-		if( FRand()<0.5 )
-			return;
-		RoamAtPlayer();
-		GoToState('Charging');
+		i = FindDetectedTarget(Pawn(A));
+		if ( i != -1 && Level.TimeSeconds < DetectedTargets[i].DetectTime + 10 ) {
+			NextChargeTime = Level.TimeSeconds + 2*(15.0 - Level.Game.GameDifficulty) + 10.0*r;
+			RoamAtPlayer();
+			GoToState('Charging');
+		}
+		else {
+			NextChargeTime = Level.TimeSeconds + 2.0;
+		}
 	}
+	else if( NextGroundPound < Level.TimeSeconds || MaxMeleeAttacks == 0 )
+	{
+		NextGroundPound = Level.TimeSeconds + 4.0 + r*10.f;
+		if (MaxMeleeAttacks <= 0)
+			MaxMeleeAttacks = rand(default.MaxMeleeAttacks+1);
+		else if( r < 0.3 )
+			return;
+
+		PrepareStillAttack(A);
+		if( r < 0.33 )
+			SetAnimAction('Attack1');
+		else if( FRand() < 0.66 )
+			SetAnimAction('Attack2');
+		else
+			SetAnimAction('RangedAttack');
+	}
+}
+
+function int FindDetectedTarget(Pawn Target)
+{
+	local int i;
+
+	if ( Target == none )
+		return -1;
+
+	for ( i = 0; i < DetectedTargets.length; ++i ) {
+		if ( DetectedTargets[i].Target == Target ) {
+			return i;
+		}
+	}
+
+	return -1;
+}
+
+function TargetDetected(Pawn Target)
+{
+	local int i;
+
+	if ( Target == none )
+		return;
+
+	if (Controller.Enemy == Target) {
+		// charge sooner
+		NextChargeTime -= 1.0;
+	}
+
+	i = FindDetectedTarget(Target);
+	if (i == -1) {
+		i = DetectedTargets.length;
+		DetectedTargets.insert(i, 1);
+		DetectedTargets[i].Target = Target;
+	}
+	DetectedTargets[i].DetectTime = Level.TimeSeconds;
 }
 
 simulated function PostNetReceive()
@@ -146,6 +214,8 @@ function TakeDamage(int Damage, Pawn InstigatedBy, vector HitLocation, vector Mo
 
 state Charging
 {
+	ignores TargetDetected;
+
 	function RangedAttack(Actor A)
 	{
 		if ( bShotAnim )
@@ -160,6 +230,7 @@ state Charging
 	}
 	function BeginState()
 	{
+		MeleeDamage *= ChargeDamageMult;
 		ChargeCounter = Rand(7);
 		MaxDesiredSpeed = 2.5f;
 		bChargingNow = true;
@@ -168,6 +239,8 @@ state Charging
 	}
 	function EndState()
 	{
+		DetectedTargets.length = 0;
+		MeleeDamage /= ChargeDamageMult;
 		NextChargeTime = Level.TimeSeconds+5+FRand()*6.f;
 		MaxDesiredSpeed = 1.f;
 		bChargingNow = False;
@@ -306,7 +379,7 @@ defaultproperties
 {
      GroundSlamSound=Sound'2009DoomMonstersSounds.Guardian.Guardian_rocksmash'
      ShockWaveDamageType=Class'ScrnDoom3KF.DamTypeGuardianShockWave'
-     ShockDamage=50
+     ShockDamage=40
      ShockRadius=1000.000000
      MaxSeekers=8
      SeekerRegenTime=9.0
@@ -335,7 +408,8 @@ defaultproperties
      MeleeAnims(0)="Attack1"
      MeleeAnims(1)="Attack2"
      MeleeAnims(2)="Attack3"
-     MeleeDamage=90
+     MeleeDamage=45
+     ChargeDamageMult=2.4
      bFatAss=True
      FootStep(0)=Sound'2009DoomMonstersSounds.Guardian.Guardian_step4'
      FootStep(1)=Sound'2009DoomMonstersSounds.Guardian.Guardian_step4'
@@ -365,7 +439,7 @@ defaultproperties
      FireRifleRapidAnim="Walk"
      FireRifleBurstAnim="Walk"
      bCanJump=False
-     MeleeRange=250.000000
+     MeleeRange=125
      GroundSpeed=200.000000
      HealthMax=5000.000000
      Health=5000
@@ -434,4 +508,6 @@ defaultproperties
      DrawScale=0.8
      PrePivot=(Z=8)
      ZapThreshold=5
+	 MaxMeleeAttacks=5
+	 RotationRate=(Yaw=30000,Roll=0)
 }

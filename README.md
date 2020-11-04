@@ -13,6 +13,22 @@ Doom3 Monsters for Killing Floor 1 - ScrN Edition
 # Version History
 *Starting from v5, ScrnDoom3KF version matches the newest version of ScrN Balance available on the release day.*
 
+### v9.63
+##### Guardian
+- The shock damage now is scaled across the difficulties: Normal: 40, HoE: 70.
+  Previously the shock damage was constant 50.
+- Default melee damage lowered to 45 (down from 90).
+- Charge damage raised to 108-189 (up from 90-157).
+- Guardian may charge only if the player has been detected by Seeker.
+ - Melee range lowered to 2.5m (down from 5m)
+ - Seekers should not back off too far away anymore
+ - Seekers are running out of fuel and die in 30-90s
+
+##### Invulnerable Hunter
+- Fixed a bug that sometimes prevented Invulnerable Hunter to attack or drop shield
+- Melee range increased
+- Melee-locking eventually pisses him off, which, in turn, leads to multiple ranged attacks in a row
+
 ### v9.62.01
 - Removed debug message from BFG projectile
 

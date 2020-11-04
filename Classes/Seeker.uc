@@ -6,13 +6,17 @@ var Actor SeekerBeamEffect;
 var bool ShouldExplode;
 
 var float InvulnerableTimer;
+var float DeathTimer;
+var transient float NextTargetDetectTime;
 
 simulated function PostBeginPlay()
 {
 	Super.PostBeginPlay();
-    
-    InvulnerableTimer += Level.TimeSeconds;
-    
+
+	InvulnerableTimer += Level.TimeSeconds;
+	DeathTimer *= 0.5 + frand();
+	DeathTimer += Level.TimeSeconds;
+
 	if( Level.NetMode!=NM_DedicatedServer )
 	{
 		SeekerEffect = Spawn(class'SeekerLightFXEmitter',self);
@@ -24,9 +28,9 @@ simulated function PostBeginPlay()
 
 function TakeDamage( int Damage, Pawn InstigatedBy, vector HitLocation, vector Momentum, class<DamageType> DamageType, optional int HitIndex )
 {
-    if ( Level.TimeSeconds < InvulnerableTimer ) 
+    if ( Level.TimeSeconds < InvulnerableTimer )
         return;
-        
+
 	Super.TakeDamage(Damage,InstigatedBy,HitLocation,Momentum,DamageType,HitIndex);
 }
 
@@ -37,6 +41,11 @@ function RangedAttack(Actor A)
 
 	if( !bHasRoamed )
 		RoamAtPlayer();
+
+	if ( Mother != none && Level.TimeSeconds > NextTargetDetectTime && Pawn(A) != none && IsInMeleeRange(A) ) {
+		Mother.TargetDetected(Pawn(A));
+		NextTargetDetectTime = Level.TimeSeconds + 1;
+	}
 }
 
 event bool EncroachingOn( actor Other )
@@ -257,4 +266,5 @@ defaultproperties
 
      MotionDetectorThreat=0 //5.14
      InvulnerableTimer=2
+     DeathTimer=60
 }

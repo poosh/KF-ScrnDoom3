@@ -4,16 +4,20 @@ var bool bHasAwaked;
 
 function ExecuteWhatToDoNext()
 {
+	local Seeker S;
+
+	S = Seeker(Pawn);
+
 	if( !bHasAwaked )
 	{
 		bHasAwaked = true;
 		GoToState('WakeUpMove');
 	}
-	else if( Seeker(Pawn).Mother==None )
+	else if( S.Mother==None || Level.TimeSeconds > S.DeathTimer )
 		GoToState('DeathWander');
 	else
 	{
-		Enemy = Seeker(Pawn).Mother.Controller.Enemy;
+		Enemy = S.Mother.Controller.Enemy;
 		Super.ExecuteWhatToDoNext();
 	}
 }
@@ -30,7 +34,7 @@ state WakeUpMove
 Ignores SeePlayer,HearNoise,DamageAttitudeTo,SetEnemy;
 
 Begin:
-	MoveTo(Pawn.Location+VRand()*300.f+vect(0,0,500),None);
+	MoveTo(Pawn.Location + VRand()*300.f + vect(0,0,300), None);
 	WhatToDoNext(18);
 }
 state DeathWander
@@ -41,6 +45,7 @@ Begin:
 	MoveTo(Pawn.Location+VRand()*200.f,None);
 	Pawn.Died(None,Class'Suicided',Pawn.Location);
 }
+
 state ZombieCharge
 {
 	function DamageAttitudeTo(Pawn Other, float Damage)
@@ -48,28 +53,34 @@ state ZombieCharge
 		if( KFM.Intelligence>=BRAINS_Mammal && Other!=None && SetEnemy(Other) )
 			GoToState(,'Backoff');
 	}
+
 	final function vector GetSeekPoint()
 	{
 		local vector P,HL,HN;
 
 		P.X = 100.f*FRand()-50.f;
 		P.Y = 100.f*FRand()-50.f;
-		P = (Enemy.Location-Normal(P)*(400+FRand()*200.f)+vect(0,0,400));
+		P = Enemy.Location - Normal(P) * (50 + FRand()*300.f);
+		P.Z = Enemy.Location.Z + 50 + rand(200);
 		if( Pawn.Trace(HL,HN,P,Pawn.Location,false)!=None )
 			P = HL+HN*10.f;
 		return P;
 	}
+
+
 	final function vector GetBackOffPoint()
 	{
 		local vector P,HL,HN;
 
 		P = Enemy.Location-Pawn.Location;
 		P.Z = 0;
-		P = (Enemy.Location-Normal(P)*(800+FRand()*500.f)+vect(0,0,500)+VRand()*300.f);
+		P = Enemy.Location - Normal(P) * (250 + FRand()*500.f) + VRand()*300.f;
+		P.Z = Enemy.Location.Z + 200 + rand(300);
 		if( Pawn.Trace(HL,HN,P,Pawn.Location,false)!=None )
 			P = HL+HN*10.f;
 		return P;
 	}
+
 	function EndState()
 	{
 		Pawn.AirSpeed = Pawn.Default.AirSpeed;
