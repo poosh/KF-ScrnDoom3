@@ -73,7 +73,10 @@ var int MaxMeleeAttacks; // prevent melee-locking
 
 // v8.11
 var name HeadBone2;
-var Vector HeadOffset;
+var Vector HeadOffset, HeadOffset2;
+// the animation frame to put on dedicated server for headshot detection.
+// 0 - begining of the aniimation; 0.5 - middle, 1.0 - end
+var float OnlineHeadAnimationPhase;
 
 // v9.20
 // Minimal headshot multiplier that can be applied on headshots. Used only if
@@ -126,13 +129,13 @@ function PlayChallengeSound()
 
 function NotifyTeleport()
 {
-    local Doom3Controller D3C;
+	local Doom3Controller D3C;
 	local KFPawn P;
 	local int c;
 
 	// if monster see players, then rate teleportation spot, except when all monsters are spawned
 	// already, i.e. players are probably moving to the trader
-    D3C = Doom3Controller(Controller);
+	D3C = Doom3Controller(Controller);
 	if ( D3C != none && D3C.LastTeleportedTo != none && KFGameType(Level.Game).TotalMaxMonsters > 0) {
 		foreach VisibleCollidingActors(class'KFMod.KFPawn', P, 1000) {
 			c++;
@@ -154,6 +157,18 @@ simulated function PostBeginPlay()
 	bHasRoamed = (FRand()<0.75);
 
 	Super.PostBeginPlay();
+
+	HeadHealth = Health;  // Doom monsters cannot be decapitated
+}
+
+function float DifficultyHeadHealthModifer()
+{
+	return DifficultyHealthModifer();  // scale head the same as body
+}
+
+function float NumPlayersHeadHealthModifer()
+{
+	return NumPlayersHealthModifer();  // scale head the same as body
 }
 
 function bool IsInMeleeRange( Actor A, optional float ExtendedRange )
@@ -249,7 +264,7 @@ simulated function Tick(float DeltaTime)
 		bResetAnimAct = False;
 	}
 
-    if ( Level.NetMode!=NM_DedicatedServer ) {
+	if ( Level.NetMode!=NM_DedicatedServer ) {
 
 		TickFX(DeltaTime);
 
@@ -278,56 +293,56 @@ simulated function Tick(float DeltaTime)
 
 function bool SayToPlayers(string msg, optional bool ForceSay)
 {
-    local Controller C;
+	local Controller C;
 
-    if ( !ForceSay && NextChatTime > Level.TimeSeconds )
-        return false;
+	if ( !ForceSay && NextChatTime > Level.TimeSeconds )
+		return false;
 
-    ReplaceText(msg, "%n", MenuName);
+	ReplaceText(msg, "%n", MenuName);
 
-    for (C = Level.ControllerList; C != None; C = C.NextController) {
-        if (PlayerController(C) != None) {
-            PlayerController(C).ClientMessage(msg);
-        }
-    }
-    NextChatTime = Level.TimeSeconds + 15;
+	for (C = Level.ControllerList; C != None; C = C.NextController) {
+		if (PlayerController(C) != None) {
+			PlayerController(C).ClientMessage(msg);
+		}
+	}
+	NextChatTime = Level.TimeSeconds + 15;
 
-    return true;
+	return true;
 }
 
 // Allow monster to detonate visible pipeboms from range
 function bool AttackPipebombs()
 {
-    local PipeBombProjectile CheckProjectile, Pipe2Attack;
+	local PipeBombProjectile CheckProjectile, Pipe2Attack;
 
-    if ( bShotAnim || RangedProjectile == none || NextPipeAttackTime > Level.TimeSeconds || NextProjTime > Level.TimeSeconds)
-        return false;
+	if ( bShotAnim || RangedProjectile == none || NextPipeAttackTime > Level.TimeSeconds || NextProjTime > Level.TimeSeconds)
+		return false;
 
-    // look for pipes in range to attack
-    foreach VisibleCollidingActors( class 'PipeBombProjectile', CheckProjectile, PipeDetectRange, Location ) {
-        //Log("Found Pipebomb @ distance " $ VSize(CheckProjectile.Location - Location) );
-        //Don't shoot same pipe again or if monster is inside damage radius
-        if ( CheckProjectile != LastShottedPipebomb
-                && VSizeSquared(CheckProjectile.Location - Location) > CheckProjectile.DamageRadius**2 ) {
-            Pipe2Attack = CheckProjectile;
-            break;
-        }
-    }
+	// look for pipes in range to attack
+	foreach VisibleCollidingActors( class 'PipeBombProjectile', CheckProjectile, PipeDetectRange, Location ) {
+		//Log("Found Pipebomb @ distance " $ VSize(CheckProjectile.Location - Location) );
+		//Don't shoot same pipe again or if monster is inside damage radius
+		if ( CheckProjectile != LastShottedPipebomb
+				&& VSizeSquared(CheckProjectile.Location - Location) > CheckProjectile.DamageRadius**2 ) {
+			Pipe2Attack = CheckProjectile;
+			break;
+		}
+	}
 
-    if ( Pipe2Attack != none ) {
-        LastShottedPipebomb = Pipe2Attack;
+	if ( Pipe2Attack != none ) {
+		LastShottedPipebomb = Pipe2Attack;
 
-        SayToPlayers(strFUPiper[Rand(strRetardedDemonsArray.Length)]);
+		SayToPlayers(strFUPiper[Rand(strRetardedDemonsArray.Length)]);
 
-        Controller.Target= Pipe2Attack;
-        Controller.Focus= Pipe2Attack;
-        FireProjectile();
+		Controller.Target= Pipe2Attack;
+		Controller.Focus= Pipe2Attack;
+		FireProjectile();
 
-        NextPipeAttackTime = Level.TimeSeconds + PipeAttackCooldown;
-        NextProjTime = NextPipeAttackTime;
-        return true;
-    }
-    return false;
+		NextPipeAttackTime = Level.TimeSeconds + PipeAttackCooldown;
+		NextProjTime = NextPipeAttackTime;
+		return true;
+	}
+	return false;
 }
 
 function bool FlipOver()
@@ -378,7 +393,7 @@ simulated function PlayDirectionalDeath(Vector HitLoc)
 	}
 	InitFX();
 	SetCollision(false, false, false);
- 	PlayDeathAnim();
+	PlayDeathAnim();
 }
 simulated function InitFX()
 {
@@ -406,7 +421,7 @@ function PlayDirectionalHit(Vector HitLoc)
 	{
 		nextHitAnimTime = Level.TimeSeconds+MinHitAnimDelay+FRand()*MinHitAnimDelay;
 		PrepareStillAttack(None);
- 		SetAnimAction(HitAnimsX[Rand(HitAnimsX.Length)]);
+		SetAnimAction(HitAnimsX[Rand(HitAnimsX.Length)]);
 	}
 }
 
@@ -433,8 +448,8 @@ simulated function RunStep()
 function AddVelocity( vector NewVelocity)
 {
 	if((Velocity.Z > 350) && (NewVelocity.Z > 1000))
-        NewVelocity.Z *= 0.5;
-    Velocity += NewVelocity;
+		NewVelocity.Z *= 0.5;
+	Velocity += NewVelocity;
 }
 
 simulated function SpawnSparksFX()
@@ -477,11 +492,11 @@ function Died(Controller Killer, class<DamageType> damageType, vector HitLocatio
 	}
 
 	if( MonsterMaster!=None ) {
-        MonsterMaster.ChildMonsterCounter--;
+		MonsterMaster.ChildMonsterCounter--;
 		MonsterMaster = None;
 	}
-    if ( ChildMonsterCounter > 0 )
-        KillChildren();
+	if ( ChildMonsterCounter > 0 )
+		KillChildren();
 
 	Super.Died(Killer,damageType,HitLocation);
 
@@ -504,10 +519,10 @@ simulated function PlayCollapseSound()
 
 simulated function StartDeRes()
 {
-    if( Level.NetMode == NM_DedicatedServer )
-        return;
-    AmbientSound = None;
-    bDeRes = true;
+	if( Level.NetMode == NM_DedicatedServer )
+		return;
+	AmbientSound = None;
+	bDeRes = true;
 }
 
 // damage scaled by DifficultyDamageModifer() now
@@ -764,14 +779,14 @@ function bool SetBossLaught()
 //Allow server admin to configure different player scaling between in-game bosses and Pat replacement
 function bool MakeGrandEntry()
 {
-    Health*= Class'Doom3Mutator'.Default.PatBossMult; // (c) PooSH
-    HealthMax = Health;
-    ZapThreshold=10;
+	Health*= Class'Doom3Mutator'.Default.PatBossMult; // (c) PooSH
+	HealthMax = Health;
+	ZapThreshold=10;
 	RoamAtPlayer();
 	bEndGameBoss = true;
-    PatExt = spawn(class'BossExt',self);
-    if ( PatExt != none )
-        PatExt.Boss = self;
+	PatExt = spawn(class'BossExt',self);
+	if ( PatExt != none )
+		PatExt.Boss = self;
 		PatExt.DifficultyHealthModifer = DifficultyHealthModifer();
 
 	return true;
@@ -815,21 +830,22 @@ simulated function int DoAnimAction( name AnimName )
 }
 function ZombieMoan();
 
+// v9.64 - removed crispy effects as they look dumb
 simulated function ZombieCrispUp()
 {
-	local byte i;
-
-	bAshen = true;
-	bCrispified = true;
-
-	SetBurningBehavior();
-
-	if ( Level.NetMode == NM_DedicatedServer || class'GameInfo'.static.UseLowGore() )
-		Return;
-
-	for( i=0; i<ArrayCount(BurnedTextureNum); ++i )
-		if( BurnedTextureNum[i]<255 )
-			Skins[BurnedTextureNum[i]] = Texture'PatchTex.Common.ZedBurnSkin';
+	// local byte i;
+	//
+	// bAshen = true;
+	// bCrispified = true;
+	//
+	// SetBurningBehavior();
+	//
+	// if ( Level.NetMode == NM_DedicatedServer || class'GameInfo'.static.UseLowGore() )
+	// 	Return;
+	//
+	// for( i=0; i<ArrayCount(BurnedTextureNum); ++i )
+	// 	if( BurnedTextureNum[i]<255 )
+	// 		Skins[BurnedTextureNum[i]] = Texture'PatchTex.Common.ZedBurnSkin';
 }
 
 // Remove Burning walk animations, cuz Doom Monsters zeds don't have it
@@ -862,35 +878,35 @@ simulated function SetBurningBehavior()
 	WalkAnims[2]     = BurningWalkAnims[1];
 	MovementAnims[3] = BurningWalkAnims[2];
 	WalkAnims[3]     = BurningWalkAnims[2];
-    */
+	*/
 }
 
 //return avarage burn damage per tick
 // (c) PooSH
 function int GetAvgBurnDamage(int InitialDamage)
 {
-    local float AvgTickInc;
+	local float AvgTickInc;
 
 
-    // Fire damage is increasing by (3-4 points per tick) * 1.5. 10 ticks total. Average = sum / 2 = 18.
+	// Fire damage is increasing by (3-4 points per tick) * 1.5. 10 ticks total. Average = sum / 2 = 18.
 
-    //try constant damage from the begining
-    //AvgTickInc = 18;
+	//try constant damage from the begining
+	//AvgTickInc = 18;
 
-    // Ignition takes 2 ticks, after that average, constant damage is applied till the end of burning process
-    // Total DoT is weaker comparing to original game due to 2 less ticks and burn in damage decrement
-    if ( BurnDown >= BurnDuration )
-        AvgTickInc = 6;
-    else if ( BurnDown > (BurnDuration - BurnInCount) )
-        AvgTickInc = 12;
-    else
-        AvgTickInc = 18;
+	// Ignition takes 2 ticks, after that average, constant damage is applied till the end of burning process
+	// Total DoT is weaker comparing to original game due to 2 less ticks and burn in damage decrement
+	if ( BurnDown >= BurnDuration )
+		AvgTickInc = 6;
+	else if ( BurnDown > (BurnDuration - BurnInCount) )
+		AvgTickInc = 12;
+	else
+		AvgTickInc = 18;
 
-    // don't apply x1.5 multiplier here, because it will be applied in KFMonster.TakeDamage()
-    // if ( !ClassIsChildOf(FireDamageClass, class'DamTypeMAC10MPInc') )
-        // AvgTickInc *= 1.5; // all fire damage except MAC10 deals x1.5 damage
+	// don't apply x1.5 multiplier here, because it will be applied in KFMonster.TakeDamage()
+	// if ( !ClassIsChildOf(FireDamageClass, class'DamTypeMAC10MPInc') )
+		// AvgTickInc *= 1.5; // all fire damage except MAC10 deals x1.5 damage
 
-    return InitialDamage + AvgTickInc;
+	return InitialDamage + AvgTickInc;
 }
 
 //overrided to implement different burn damage
@@ -899,11 +915,11 @@ simulated function Timer()
 	bSTUNNED = false;
 
 	if (BurnDown > 0) {
-        //set damage to -1 to indicate zed is continuing previous burning, not receiving a new fire damage
+		//set damage to -1 to indicate zed is continuing previous burning, not receiving a new fire damage
 		TakeFireDamage(-1, BurnInstigator);
-        SetTimer(1.0,false);
+		SetTimer(1.0,false);
 	}
-    else {
+	else {
 		UnSetBurningBehavior();
 
 		RemoveFlamingEffects();
@@ -917,22 +933,22 @@ function TakeDamage(int Damage, Pawn instigatedBy, Vector hitlocation, Vector mo
 	local bool bIncDamage, bIsFireDamage;
 	local KFPlayerReplicationInfo KFPRI;
 	local float HeadShotScale;
-    local string msg;
+	local string msg;
 	local class<KFWeaponDamageType> KFDamType;
 
-    LastDamagedBy = instigatedBy;
+	LastDamagedBy = instigatedBy;
 	LastDamagedByType = DamType;
 	HitMomentum = VSize(momentum);
 	LastHitLocation = hitlocation;
 	LastMomentum = momentum;
 	bLastHeadshot = false;
 
-    if( bZapped )
-        Damage *= ZappedDamageMod;
+	if( bZapped )
+		Damage *= ZappedDamageMod;
 
 	KFDamType = class<KFWeaponDamageType>(DamType);
 	if ( KFDamType != none )
-    {
+	{
 		bIncDamage = class<DamTypeTrenchgun>(DamType) != none ||
 					 class<DamTypeFlareRevolver>(DamType) != none ||
 					 class<DamTypeMAC10MPInc>(DamType) != none;
@@ -975,16 +991,16 @@ function TakeDamage(int Damage, Pawn instigatedBy, Vector hitlocation, Vector mo
 		}
 
 		if ( KFDamType.default.bCheckForHeadShots ) {
-            if ( HitIndex == 101 )
-                bLastHeadshot = true;
-            else {
-                HeadShotScale = 1.0;
+			if ( HitIndex == 101 )
+				bLastHeadshot = true;
+			else {
+				HeadShotScale = 1.0;
 
-                // Do larger headshot checks if it is a melee attach
-                if( class<DamTypeMelee>(DamType) != none )
-                    HeadShotScale *= 1.25;
-                bLastHeadshot = IsHeadShot(hitlocation, normal(momentum), HeadShotScale);
-            }
+				// Do larger headshot checks if it is a melee attach
+				if( class<DamTypeMelee>(DamType) != none )
+					HeadShotScale *= 1.25;
+				bLastHeadshot = IsHeadShot(hitlocation, normal(momentum), HeadShotScale);
+			}
 		}
 
 		if ( KFPawn(instigatedBy) != none && instigatedBy.PlayerReplicationInfo != none )
@@ -998,7 +1014,7 @@ function TakeDamage(int Damage, Pawn instigatedBy, Vector hitlocation, Vector mo
 
 		if ( bLastHeadshot )
 		{
-            HeadShotScale = KFDamType.default.HeadShotDamageMult;
+			HeadShotScale = KFDamType.default.HeadShotDamageMult;
 			//made compatible with 1035+ patch -- PooSH
 			if ( class<DamTypeMelee>(DamType) == none && KFPRI != none && KFPRI.ClientVeteranSkill != none )
 				HeadShotScale *= KFPRI.ClientVeteranSkill.Static.GetHeadShotDamMulti(KFPRI, KFPawn(instigatedBy), DamType);
@@ -1008,9 +1024,9 @@ function TakeDamage(int Damage, Pawn instigatedBy, Vector hitlocation, Vector mo
 					&& (class<DamTypeCrossbow>(DamType) != none || class<DamTypeM99SniperRifle>(DamType) != none) ) {
 				HeadShotScale *= 0.75;
 			}
-            else if ( KFDamType.default.HeadShotDamageMult > 1.0001 )
-                HeadShotScale = fmax(HeadShotScale, MinHeadShotDamageMult);
-            Damage *= HeadShotScale;
+			else if ( KFDamType.default.HeadShotDamageMult > 1.0001 )
+				HeadShotScale = fmax(HeadShotScale, MinHeadShotDamageMult);
+			Damage *= HeadShotScale;
 
 			LastDamageAmount = Damage;
 
@@ -1025,7 +1041,7 @@ function TakeDamage(int Damage, Pawn instigatedBy, Vector hitlocation, Vector mo
 		{
 			BileCount=7;
 			BileInstigator = instigatedBy;
-            LastBileDamagedByType=class<DamTypeVomit>(DamType); // support of BlowerThrower
+			LastBileDamagedByType=class<DamTypeVomit>(DamType); // support of BlowerThrower
 			if(NextBileTime< Level.TimeSeconds )
 				NextBileTime = Level.TimeSeconds+BileFrequency;
 		}
@@ -1042,9 +1058,9 @@ function TakeDamage(int Damage, Pawn instigatedBy, Vector hitlocation, Vector mo
 
 	Super(Monster).TakeDamage(Damage, instigatedBy, hitLocation, momentum, DamType, HitIndex);
 
-    // Beta8 - FIXED HUGE BUG
-    // Players didn't get any money for killing doom monsters (earned only team score)
-    // block below copy-pasted from KFMonster
+	// Beta8 - FIXED HUGE BUG
+	// Players didn't get any money for killing doom monsters (earned only team score)
+	// block below copy-pasted from KFMonster
 	if ( DamType != none && LastDamagedBy != none && LastDamagedBy.IsPlayerPawn() && LastDamagedBy.Controller != none )
 	{
 		if ( KFMonsterController(Controller) != none )
@@ -1065,39 +1081,63 @@ function TakeDamage(int Damage, Pawn instigatedBy, Vector hitlocation, Vector mo
 		}
 	}
 
-    if ( bEndGameBoss ) {
+	if ( bEndGameBoss ) {
 
-        // Boss whining about retarded demons :)
-        if (instigatedBy != self && DoomMonster(instigatedBy) != none && Level.TimeSeconds > NextChatTime ) {
-            msg = strRetardedDemonsArray[Rand(strRetardedDemonsArray.Length)];
-            ReplaceText(msg, "%a", DoomMonster(instigatedBy).MenuName);
-            SayToPlayers(msg);
-        }
-        else if ( PatExt != none ) {
-            PatExt.TookDamage(Damage, instigatedBy, DamType);
-        }
-    }
+		// Boss whining about retarded demons :)
+		if (instigatedBy != self && DoomMonster(instigatedBy) != none && Level.TimeSeconds > NextChatTime ) {
+			msg = strRetardedDemonsArray[Rand(strRetardedDemonsArray.Length)];
+			ReplaceText(msg, "%a", DoomMonster(instigatedBy).MenuName);
+			SayToPlayers(msg);
+		}
+		else if ( PatExt != none ) {
+			PatExt.TookDamage(Damage, instigatedBy, DamType);
+		}
+	}
 }
 
-/*
-                 BoneLoc
-                /|  --
-              /  |    \
-            /    |     >-- Distance
-    HitLoc/_ _ _ |  __/
-          HitNormal
-*/
-function bool CheckBoneHit(vector BoneLoc, float BoneRadius, vector HitLoc, vector HitNormal)
+/**
+ * Tests if the tracing Ray that hit the target at HitLoc hits also the given target's sphere-shaped hitbox.
+ * @param HitLoc location where the tracing ray hit the target's collision cylinder
+ * @param Ray normalized direction of the trace line
+ * @param SphereLoc the center of the sphere (e.g., Head bone's location for headshot detection)
+ * @param SphereRadius the radius of the sphere
+ * @pre The function assumes that the sphere is inside the target's collision cylinder
+ * @return true if the ray hits the sphere
+ */
+static function bool TestHitboxSphere(vector HitLoc, vector Ray, vector SphereLoc, float SphereRadius)
 {
-    local float cosA, A, Distance;
+	local vector HitToSphere;  // vector from HitLoc to SphereLoc
+	local vector P;
 
-    cosA = normal(BoneLoc - HitLoc) dot HitNormal;
-    A = acos(cosA);
-    Distance = sin(A) * vsize(BoneLoc - HitLoc);
-    return Distance < BoneRadius;
+	SphereRadius *= SphereRadius; // square it to avoid doing sqrt()
+
+	HitToSphere = SphereLoc - HitLoc;
+	if ( VSizeSquared(HitToSphere) < SphereRadius ) {
+		// HitLoc is already inside the sphere - no projection needed
+		return true;
+	}
+
+	// Let's project SphereLoc to Ray to get the projection point P.
+	//               SphereLoc
+	//              /|
+	//            /  |
+	//          /    |
+	// HitLoc /_ _ _ |  _ _ _ _ _ _ > Ray
+	//              P^     ^M
+	//
+	// If VSize(P - SphereLoc) < SphereRadius, the Ray hits the sphere.
+	// VSize(P - SphereLoc) = sin(A) * vsize(SpereLoc - HitLoc)
+	// A = acos(normal(SphereLoc - HitLoc) dot Ray)
+	// The above solution is simle to understand. However, it is CPU-heavy since it uses 2 trigonometric function calls.
+	// The below algorithm does the same but avoids trigonometry
+
+	// HitToSphere dot Ray = cos(A) * VSize(HitToSphere) = VSize(P - HitLoc)
+	P = HitLoc + Ray * (HitToSphere dot Ray);
+
+	return VSizeSquared(P - SphereLoc) < SphereRadius;
 }
 
-function bool IsHeadShot(vector loc, vector ray, float AdditionalScale)
+function bool IsHeadShot(vector HitLoc, vector ray, float AdditionalScale)
 {
 	local coords C;
 	local vector HeadLoc;
@@ -1118,10 +1158,10 @@ function bool IsHeadShot(vector loc, vector ray, float AdditionalScale)
 				else if( VSizeSquared(Acceleration)<150.f )
 					PlayAnim(IdleRestAnim, 1.0, 0.0);
 				else
-                    PlayAnim(MovementAnims[0], 1.0, 0.0);
+					PlayAnim(MovementAnims[0], 1.0, 0.0);
 			}
 			else
-                bWasAnimating = true;
+				bWasAnimating = true;
 
 			if ( bDoTorsoTwist ) {
 				SmoothViewYaw = Rotation.Yaw;
@@ -1135,51 +1175,53 @@ function bool IsHeadShot(vector loc, vector ray, float AdditionalScale)
 		}
 		else if( Physics == PHYS_Swimming && !bShotAnim ) {
 			PlayAnim(SwimAnims[0], 1.0, 0.0);
-        }
-		if( !bWasAnimating )
-			SetAnimFrame(0.5);
+		}
+		if( !bWasAnimating ) {
+			SetAnimFrame(OnlineHeadAnimationPhase);
+			AdditionalScale *= OnlineHeadshotScale;
+		}
 	}
 	C = GetBoneCoords(HeadBone);
 	HeadLoc = C.Origin + (HeadHeight * HeadScale * AdditionalScale * C.XAxis)
-        + (HeadOffset >> Rotation);
-    bResult = CheckBoneHit(HeadLoc, HeadRadius * HeadScale * AdditionalScale, loc, ray);
+		+ (HeadOffset >> Rotation);
+	bResult = TestHitboxSphere(HitLoc, ray, HeadLoc, HeadRadius * HeadScale * AdditionalScale);
 
-    if ( !bResult && HeadBone2 != '' ) {
-        // second head
-        C = GetBoneCoords(HeadBone2);
-        HeadLoc = C.Origin + (HeadHeight * HeadScale * AdditionalScale * C.XAxis)
-            + (HeadOffset >> Rotation);
-        bResult = CheckBoneHit(HeadLoc, HeadRadius * HeadScale * AdditionalScale, loc, ray);
-    }
+	if ( !bResult && HeadBone2 != '' ) {
+		// second head
+		C = GetBoneCoords(HeadBone2);
+		HeadLoc = C.Origin + (HeadHeight * HeadScale * AdditionalScale * C.XAxis)
+			+ (HeadOffset2 >> Rotation);
+		bResult = TestHitboxSphere(HitLoc, ray, HeadLoc, HeadRadius * HeadScale * AdditionalScale);
+	}
 
-    return bResult;
+	return bResult;
 }
 
 function DoomMonster SpawnChild(class<DoomMonster> SpawnClass, vector SpawnLoc)
 {
-    local DoomMonster child;
+	local DoomMonster child;
 
-    child = spawn(SpawnClass,,,SpawnLoc);
-    if ( child != none ) {
-        ChildMonsterCounter++;
-        child.MonsterMaster = self;
-        child.NotifyTeleport();
-    }
-    return child;
+	child = spawn(SpawnClass,,,SpawnLoc);
+	if ( child != none ) {
+		ChildMonsterCounter++;
+		child.MonsterMaster = self;
+		child.NotifyTeleport();
+	}
+	return child;
 }
 
 function KillChildren()
 {
-    local array<DoomMonster> Children;
-    local DoomMonster DM;
-    local int i;
+	local array<DoomMonster> Children;
+	local DoomMonster DM;
+	local int i;
 
-    foreach DynamicActors(class'ScrnDoom3KF.DoomMonster', DM) {
-        if ( DM.Health > 0 && DM.MonsterMaster == self )
-            Children[Children.Length] = DM;
-    }
-    for ( i=0; i<Children.Length; ++i )
-        Children[i].KilledBy(self);
+	foreach DynamicActors(class'ScrnDoom3KF.DoomMonster', DM) {
+		if ( DM.Health > 0 && DM.MonsterMaster == self )
+			Children[Children.Length] = DM;
+	}
+	for ( i=0; i<Children.Length; ++i )
+		Children[i].KilledBy(self);
 }
 
 State ZombieDying
@@ -1197,12 +1239,12 @@ ignores PostNetReceive;
 		if ( Controller != None )
 			Controller.Destroy();
 
-        // disable further monster spawning when PAT replacement dies  -- PooSH
-        if ( PatExt != none ) {
-            PatExt.SetTimer(0, false);
-            PatExt.Destroy();
-        }
- 	}
+		// disable further monster spawning when PAT replacement dies  -- PooSH
+		if ( PatExt != none ) {
+			PatExt.SetTimer(0, false);
+			PatExt.Destroy();
+		}
+	}
 	function Landed(vector HitNormal)
 	{
 		if ( !IsAnimating(0) )
@@ -1296,9 +1338,9 @@ ignores PostNetReceive;
 			KAddImpulse(PushLinVel, HitLocation);
 		}
 
-        	HitRay = vect(0,0,0);
-        	if( InstigatedBy != none )
-        		HitRay = Normal(HitLocation-(InstigatedBy.Location+(vect(0,0,1)*InstigatedBy.EyeHeight)));
+			HitRay = vect(0,0,0);
+			if( InstigatedBy != none )
+				HitRay = Normal(HitLocation-(InstigatedBy.Location+(vect(0,0,1)*InstigatedBy.EyeHeight)));
 
 		CalcHitLoc( HitLocation, HitRay, HitBone, HitBoneDist );
 
@@ -1307,8 +1349,8 @@ ignores PostNetReceive;
 		else
 			HitNormal = Normal( Vect(0,0,1) + VRand() * 0.2 + vect(0,0,2.8) );
 
-            // Actually do blood on a client
-            PlayHit(Damage, InstigatedBy, hitLocation, damageType, Momentum);
+			// Actually do blood on a client
+			PlayHit(Damage, InstigatedBy, hitLocation, damageType, Momentum);
 		DoDamageFX( HitBone, Damage, DamageType, Rotator(HitNormal) );
 	}
 }
@@ -1383,6 +1425,8 @@ defaultproperties
      DeResGravScale=10.000000
      bCanWalkOffLedges=True
      HeadScale=1.000000
+     OnlineHeadAnimationPhase=0.5
+     OnlineHeadshotScale=1.1
      ControllerClass=Class'ScrnDoom3KF.Doom3Controller'
      bDoTorsoTwist=False
      DrawScale=1.400000
@@ -1391,6 +1435,7 @@ defaultproperties
      ZapThreshold=0.50
      ZappedDamageMod=1.25
 
-	 MaxMeleeAttacks=3
-	 FireRootBone="chest"
+     MaxMeleeAttacks=3
+     FireRootBone="chest"
+     CrispUpThreshhold=3
 }

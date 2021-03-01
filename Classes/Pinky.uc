@@ -44,11 +44,6 @@ simulated function BurnAway()
 	Burning = true;
 }
 
-function bool IsHeadShot(vector loc, vector ray, float AdditionalScale)
-{
-	return false;
-}
-
 defaultproperties
 {
      MetalSteps(0)=Sound'2009DoomMonstersSounds.Pinky.Pinky_metalstep_test24'
@@ -115,6 +110,11 @@ defaultproperties
      HealthMax=550.000000
      Health=550
      MenuName="Pinky"
+     HeadBone="Jaw"
+     HeadRadius=15
+     HeadHeight=0
+     OnlineHeadshotScale=1.2
+     OnlineHeadAnimationPhase=0.28
      MovementAnims(0)="Run"
      MovementAnims(1)="Run"
      MovementAnims(2)="Run"
@@ -169,10 +169,13 @@ defaultproperties
      Skins(2)=Texture'2009DoomMonstersTex.Pinky.PinkyTeethDiffuseA'
      Skins(3)=Shader'2009DoomMonstersTex.Pinky.drool'
      Skins(4)=Shader'2009DoomMonstersTex.Pinky.drool'
-     
+
+     CollisionHeight=30 //44
      CollisionRadius=26 //30
+     PrePivot=(X=0,Y=0,Z=9)
      bUseExtendedCollision=True
-     ColOffset=(Y=0,Z=0)
-     ColRadius=42.000000
-     ColHeight=30.000000          
+     ColOffset=(X=12,Y=0,Z=0)
+     ColRadius=50.000000
+     ColHeight=30.000000
+     SoundRadius=500
 }

@@ -13,6 +13,11 @@ Doom3 Monsters for Killing Floor 1 - ScrN Edition
 # Version History
 *Starting from v5, ScrnDoom3KF version matches the newest version of ScrN Balance available on the release day.*
 
+### v9.64
+- Pinky now has a "head" hitbox. Pro-tip: shoot into its mouth.
+- Optimized headshot detection for all Doom demons.
+- Removed crispy effects because those look stupid on Doom demons.
+
 ### v9.63
 ##### Guardian
 - The shock damage now is scaled across the difficulties: Normal: 40, HoE: 70.
