@@ -13,6 +13,11 @@ Doom3 Monsters for Killing Floor 1 - ScrN Edition
 # Version History
 *Starting from v5, ScrnDoom3KF version matches the newest version of ScrN Balance available on the release day.*
 
+### v9.66
+- Enhanced headshot detection on flying monsters
+- Fixed an issue when online head scale was not always applied on dedicated server
+- Fixed laser projection
+
 ### v9.64
 - Pinky now has a "head" hitbox. Pro-tip: shoot into its mouth.
 - Optimized headshot detection for all Doom demons.

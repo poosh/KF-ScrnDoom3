@@ -152,13 +152,33 @@ function NotifyTeleport()
 
 simulated function PostNetReceive();
 
+simulated function PreBeginPlay()
+{
+	// Doom monsters cannot be decapitated. Make head health the same as body
+	HeadHealth = Health;
+	PlayerNumHeadHealthScale = PlayerCountHealthScale;
+
+	super.PreBeginPlay();
+}
+
 simulated function PostBeginPlay()
 {
-	bHasRoamed = (FRand()<0.75);
-
 	Super.PostBeginPlay();
 
-	HeadHealth = Health;  // Doom monsters cannot be decapitated
+	if ( Role < ROLE_Authority ) {
+		// spawn extended zed collision on client side for projector tracing (e.g., laser sights)
+		if ( bUseExtendedCollision && MyExtCollision == none )
+		{
+			MyExtCollision = Spawn(class'ExtendedZCollision', self);
+			MyExtCollision.SetCollisionSize(ColRadius, ColHeight);
+
+			MyExtCollision.bHardAttach = true;
+			MyExtCollision.SetLocation(Location + (ColOffset >> Rotation));
+			MyExtCollision.SetPhysics(PHYS_None);
+			MyExtCollision.SetBase(self);
+			SavedExtCollision = MyExtCollision.bCollideActors;
+		}
+	}
 }
 
 function float DifficultyHeadHealthModifer()
@@ -1149,7 +1169,7 @@ function bool IsHeadShot(vector HitLoc, vector ray, float AdditionalScale)
 
 	// If we are a dedicated server estimate what animation is most likely playing on the client
 	if( Level.NetMode == NM_DedicatedServer && !bShotAnim ) {
-		if (Physics == PHYS_Falling)
+		if ( Physics == PHYS_Falling || Physics == PHYS_Flying )
 			PlayAnim(AirAnims[0], 1.0, 0.0);
 		else if( Physics == PHYS_Walking ) {
 			if( !IsAnimating(0) && !IsAnimating(1) ) {
@@ -1178,8 +1198,8 @@ function bool IsHeadShot(vector HitLoc, vector ray, float AdditionalScale)
 		}
 		if( !bWasAnimating ) {
 			SetAnimFrame(OnlineHeadAnimationPhase);
-			AdditionalScale *= OnlineHeadshotScale;
 		}
+		AdditionalScale *= OnlineHeadshotScale;
 	}
 	C = GetBoneCoords(HeadBone);
 	HeadLoc = C.Origin + (HeadHeight * HeadScale * AdditionalScale * C.XAxis)
