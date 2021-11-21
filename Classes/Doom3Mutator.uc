@@ -23,6 +23,8 @@ var float ProgressPct;
 var Doom3GameRules GameRules;
 var Doom3ReplicationInfo RI;
 
+var transient bool bMonstersEnabled, bSuperMonstersEnabled;
+
 
 function PostBeginPlay()
 {
@@ -39,6 +41,8 @@ function PostBeginPlay()
 	RI.PrecacheMonsterMask = 0;
 	class'ScrnDoom3KF.Doom3Controller'.default.TeleportDestinations.length = 0; // reset navigation points
 
+	bMonstersEnabled = bSpawnMonsters;
+	bSuperMonstersEnabled = bSpawnSuperMonsters;
 
 	bBigMap = false;
 	if( LargeMaps.Length>0 ) {
@@ -227,6 +231,8 @@ static event string GetDescriptionText(string PropName)
 	return Super.GetDescriptionText(PropName);
 }
 
+function AddDoom3Mobs(byte MaxAmmount) { }
+
 state AddingSuperMonsters
 {
 	function BeginState()
@@ -253,7 +259,7 @@ state AddingSuperMonsters
 				ProgressPct = 2.f;
 			}
 
-			if( bSpawnSuperMonsters && KF.WaveNum < KF.FinalWave
+			if( bSuperMonstersEnabled && KF.WaveNum < KF.FinalWave
 					&& KF.WaveNum >= int(KF.FinalWave*BossStartWaves+0.01) && FRand() < BossWaveRate )
 			{
 				TryToAddBoss();
@@ -274,6 +280,9 @@ state AddingD3Squads extends AddingSuperMonsters
 	{
 		local class<KFMonster> DC;
 		local byte i;
+
+		if ( !bMonstersEnabled )
+			return;
 
 		// don't build squads larger than 6 mobs, because they may have trouble to spawn
 		if ( KF.NextSpawnSquad.Length >= 6 )
@@ -321,18 +330,37 @@ Begin:
 
 auto state PrepareDemonSpawn
 {
-	function BeginState()
-	{
-		if (bSpawnMonsters) {
-			GotoState('AddingD3Squads');
-		}
-		else  if (bSpawnSuperMonsters) {
-			GotoState('AddingSuperMonsters');
-		}
-		else {
-			GotoState('');
-		}
+Begin:
+	sleep(1.0);
+	OnStateChange();
+}
+
+function OnStateChange()
+{
+	if ( bMonstersEnabled ) {
+		GotoState('AddingD3Squads');
 	}
+	else  if ( bSuperMonstersEnabled ) {
+		GotoState('AddingSuperMonsters');
+	}
+	else {
+		GotoState('');
+	}
+}
+
+function bool SetCustomValue(name Key, int Value)
+{
+	switch (Key) {
+		case 'SpawnDoom3Monsters':
+			// 0 - disabled
+			// 1 - only mid-game bosses
+			// 2 - bosses + regular mobs
+			bSuperMonstersEnabled = Value >= 1;
+			bMonstersEnabled = Value >= 2;
+			OnStateChange();
+			return true;
+	}
+	return false;
 }
 
 function GetServerDetails( out GameInfo.ServerResponseLine ServerState )
@@ -413,7 +441,7 @@ final function MakeSmallMap()
 
 defaultproperties
 {
-	VersionNumber=96801
+	VersionNumber=96900
 
 	MinDoomPct=0.10
 	MaxDoomPct=0.20
