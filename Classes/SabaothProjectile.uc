@@ -1,7 +1,5 @@
 class SabaothProjectile extends DoomProjectile;
 
-var SabaothProjTrail Trail;
-var Sound NewImpactSounds[4];
 var class<SabaothProjArc> GreenArcs[2];
 var Sound ArcSounds[3];
 var vector NormalDir;
@@ -16,9 +14,6 @@ simulated function PostBeginPlay()
 {
 	Super.PostBeginPlay();
 
-	if ( Level.NetMode != NM_DedicatedServer )
-		Trail = Spawn(class'SabaothProjTrail',self);
-	Velocity = Vector(Rotation) * Speed;
 	ChargeTime = Level.TimeSeconds + default.ChargeTime;
 	SetTimer(1.0, false);
 }
@@ -60,29 +55,18 @@ simulated function Timer()
 
 simulated function Explode(vector HitLocation,vector HitNormal)
 {
-	local int OriginalDamage;
-
 	if( bHadDeathFX )
 		return;
 	bHadDeathFX = true;
 
-	OriginalDamage = Damage;
 	if ( Level.TimeSeconds < ChargeTime ) {
 		Damage *= fmax(0.2, 1.0 - ((ChargeTime - Level.TimeSeconds) / default.ChargeTime));
 	}
-
-	HurtRadius(Damage, DamageRadius, MyDamageType, MomentumTransfer, HitLocation );
-
-	PlaySound(NewImpactSounds[Rand(4)], SLOT_Misc);
-	if ( EffectIsRelevant(Location,false) )
-		Spawn(class'SabaothProjExplosion',,, Location);
-	Destroy();
+	super.Explode(HitLocation, HitNormal);
 }
 
 simulated function Destroyed()
 {
-	if (Trail != None)
-		Trail.Kill();
 	if( !bHadDeathFX && Level.NetMode==NM_Client )
 		Explode(Location,Normal(-Velocity));
 	Super.Destroyed();
@@ -93,7 +77,8 @@ function ProcessTouch(Actor Other, Vector HitLocation)
 	if ( Other!=Instigator && ExtendedZCollision(Other)==None )
 		Explode(HitLocation,Normal(HitLocation-Other.Location));
 }
-singular function HitWall(vector HitNormal, actor Wall)
+
+function HitWall(vector HitNormal, actor Wall)
 {
 	if ( !Wall.bStatic && !Wall.bWorldGeometry )
 	{
@@ -108,6 +93,7 @@ singular function HitWall(vector HitNormal, actor Wall)
 	Explode(Location + ExploWallOut * HitNormal, HitNormal);
 	HurtWall = None;
 }
+
 function TakeDamage(int Damage, Pawn InstigatedBy, vector HitLocation, vector Momentum, class<DamageType> DamageType, optional int HitIndex)
 {
 	local class<KFWeaponDamageType> KFDamType;
@@ -204,41 +190,45 @@ simulated function HurtRadius( float DamageAmount, float DamageRadius, class<Dam
 
 defaultproperties
 {
-	 NewImpactSounds(0)=Sound'2009DoomMonstersSounds.BFG.bfg_explode1'
-	 NewImpactSounds(1)=Sound'2009DoomMonstersSounds.BFG.bfg_explode2'
-	 NewImpactSounds(2)=Sound'2009DoomMonstersSounds.BFG.bfg_explode3'
-	 NewImpactSounds(3)=Sound'2009DoomMonstersSounds.BFG.bfg_explode4'
-	 GreenArcs(0)=Class'ScrnDoom3KF.SabaothProjArc'
-	 GreenArcs(1)=Class'ScrnDoom3KF.SabaothProjArcFat'
-	 ArcSounds(0)=Sound'2009DoomMonstersSounds.BFG.arc_1'
-	 ArcSounds(1)=Sound'2009DoomMonstersSounds.BFG.arc_3'
-	 ArcSounds(2)=Sound'2009DoomMonstersSounds.BFG.arc_4'
-	 Speed=1000.000000
-	 MaxSpeed=1150.000000
-	 Damage=50 // 60
-	 DamageRadius=250.000000
-	 MomentumTransfer=10000.000000
-	 MyDamageType=Class'ScrnDoom3KF.DamTypeSabaothProj'
-	 ExplosionDecal=Class'ScrnDoom3KF.SabaothProjDecal'
-	 LightType=LT_Steady
-	 LightEffect=LE_QuadraticNonIncidence
-	 LightHue=106
-	 LightSaturation=104
-	 LightBrightness=169.000000
-	 LightRadius=4.000000
-	 DrawType=DT_None
-	 bDynamicLight=True
-	 bNetTemporary=False
-	 AmbientSound=Sound'2009DoomMonstersSounds.BFG.bfg_fly'
-	 LifeSpan=10.000000
-	 DrawScale=0.200000
-	 SoundVolume=255
-	 SoundRadius=250.000000
-	 TransientSoundVolume=1.500000
-	 TransientSoundRadius=450.000000
-	 CollisionRadius=16.000000
-	 CollisionHeight=16.000000
-	 bProjTarget=True
-	 Health=100
-	 ChargeTime=1.0
+	TrailClass=class'ScrnDoom3KF.SabaothProjTrail'
+	ExplodeProjClass=class'ScrnDoom3KF.SabaothProjExplosion'
+	ShakeRadius=180.0
+	ShakeScale=2.0
+	NewImpactSounds(0)=Sound'2009DoomMonstersSounds.BFG.bfg_explode1'
+	NewImpactSounds(1)=Sound'2009DoomMonstersSounds.BFG.bfg_explode2'
+	NewImpactSounds(2)=Sound'2009DoomMonstersSounds.BFG.bfg_explode3'
+	NewImpactSounds(3)=Sound'2009DoomMonstersSounds.BFG.bfg_explode4'
+	GreenArcs(0)=Class'ScrnDoom3KF.SabaothProjArc'
+	GreenArcs(1)=Class'ScrnDoom3KF.SabaothProjArcFat'
+	ArcSounds(0)=Sound'2009DoomMonstersSounds.BFG.arc_1'
+	ArcSounds(1)=Sound'2009DoomMonstersSounds.BFG.arc_3'
+	ArcSounds(2)=Sound'2009DoomMonstersSounds.BFG.arc_4'
+	Speed=1000.000000
+	MaxSpeed=1150.000000
+	Damage=50 // 60
+	DamageRadius=250.000000
+	MomentumTransfer=10000.000000
+	MyDamageType=Class'ScrnDoom3KF.DamTypeSabaothProj'
+	ExplosionDecal=Class'ScrnDoom3KF.SabaothProjDecal'
+	LightType=LT_Steady
+	LightEffect=LE_QuadraticNonIncidence
+	LightHue=106
+	LightSaturation=104
+	LightBrightness=169.000000
+	LightRadius=4.000000
+	DrawType=DT_None
+	bDynamicLight=True
+	bNetTemporary=False
+	AmbientSound=Sound'2009DoomMonstersSounds.BFG.bfg_fly'
+	LifeSpan=10.000000
+	DrawScale=0.200000
+	SoundVolume=255
+	SoundRadius=250.000000
+	TransientSoundVolume=1.500000
+	TransientSoundRadius=450.000000
+	CollisionRadius=16.000000
+	CollisionHeight=16.000000
+	bProjTarget=True
+	Health=100
+	ChargeTime=1.0
 }

@@ -1,19 +1,21 @@
 class MaledictFireWallProj extends DoomProjectile;
 
-var MaledictFireWallTrail Trail;
-var vector InitialDir;
-var bool Seeking;
 var Sound AltAmbient;
 
 simulated function PostBeginPlay()
 {
 	if ( Level.NetMode != NM_DedicatedServer )
 	{
-		if(fRand() > 0.5)
+		if(fRand() > 0.5) {
 			AmbientSound = AltAmbient;
-		Trail = Spawn(class'MaledictFireWallTrail', self);
+		}
+		else {
+			TrailClass = none;
+		}
 	}
-	Velocity = Vector(Rotation) * Speed;
+
+	super.PostBeginPlay();
+
 	SetTimer(0.1, true);
 }
 
@@ -47,7 +49,7 @@ simulated function HitWall( vector HitNormal, actor Wall );
 
 simulated function Timer()
 {
-	ShakeView(DamageRadius*1.5f,2.f);
+	ShakeView(ShakeRadius, ShakeScale);
 	HurtRadius(Damage, DamageRadius, MyDamageType, MomentumTransfer, Location );
 }
 
@@ -82,25 +84,29 @@ simulated function HurtRadius( float DamageAmount, float DamageRadius, class<Dam
 
 defaultproperties
 {
-     AltAmbient=Sound'2009DoomMonstersSounds.Maledict.Maledict_flamewall_04'
-     Speed=900.000000
-     MaxSpeed=1150.000000
-     Damage=30 // 20
-     DamageRadius=100.000000
-     MyDamageType=Class'ScrnDoom3KF.DamTypeMaledict'
-     LightType=LT_Steady
-     LightEffect=LE_QuadraticNonIncidence
-     LightHue=28
-     LightSaturation=127
-     LightBrightness=255.000000
-     LightRadius=4.000000
-     DrawType=DT_None
-     bDynamicLight=True
-     Physics=PHYS_Falling
-     AmbientSound=Sound'2009DoomMonstersSounds.Maledict.Maledict_flamewall_03'
-     LifeSpan=4.000000
-     SoundVolume=255
-     SoundRadius=150.000000
-     CollisionRadius=15.000000
-     CollisionHeight=13.000000
+	TrailClass=class'ScrnDoom3KF.MaledictFireWallTrail'
+	ShakeRadius=150
+	ShakeScale=2.0
+
+	Speed=900.000000
+	MaxSpeed=1150.000000
+	Damage=30 // 20
+	DamageRadius=100.000000
+	MyDamageType=Class'ScrnDoom3KF.DamTypeMaledict'
+	LightType=LT_Steady
+	LightEffect=LE_QuadraticNonIncidence
+	LightHue=28
+	LightSaturation=127
+	LightBrightness=255.000000
+	LightRadius=4.000000
+	DrawType=DT_None
+	bDynamicLight=True
+	Physics=PHYS_Falling
+	AmbientSound=Sound'2009DoomMonstersSounds.Maledict.Maledict_flamewall_03'
+	AltAmbient=Sound'2009DoomMonstersSounds.Maledict.Maledict_flamewall_04'
+	LifeSpan=4.000000
+	SoundVolume=255
+	SoundRadius=150.000000
+	CollisionRadius=15.000000
+	CollisionHeight=13.000000
 }

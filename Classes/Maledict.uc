@@ -86,7 +86,7 @@ function PlayChargeSound()
 
 simulated function SpawnBigMeteor() //or firewall
 {
-	local class<Projectile> OriginalProj;
+	local class<DoomProjectile> OriginalProj;
 
 	if( Level.NetMode!=NM_Client )
 	{
@@ -161,7 +161,7 @@ function Timer()
 		return;
 	}
 	bSoulIsOK = false;
-	SpawnChild(Class'Forgotten',ForgottenPos);
+	SpawnChild(ChildrenMonsters[rand(ChildrenMonsters.length)], ForgottenPos);
 	if( BurnDown>0 ) // Keep burning...
 		SetTimer(1,true);
 }
@@ -202,6 +202,7 @@ simulated function AssignInitialPose()
 
 defaultproperties
 {
+     ChildrenMonsters(0)=class'ScrnDoom3KF.Forgotten'
      SummonAnims(0)="Summon"
      SummonAnims(1)="Attack01"
      SummonAnims(2)="SummonLostSouls"

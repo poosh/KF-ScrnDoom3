@@ -1,6 +1,7 @@
 // Original for UT2004 by INI, edit for KF by Marco.
 // further support by PooSH
-class DoomMonster extends KFMonster;
+class DoomMonster extends KFMonster
+	abstract;
 
 #exec obj load file="2009DoomMonstersSounds"
 #exec obj load file="2009DoomMonstersTex"
@@ -8,6 +9,7 @@ class DoomMonster extends KFMonster;
 #exec obj load file="2009DoomMonstersSM"
 
 var DoomMonster MonsterMaster;
+var array< class<DoomMonster> > ChildrenMonsters;
 var byte ChildMonsterCounter;
 
 var TriggerSpawnDemon SpawnFactory;
@@ -22,9 +24,12 @@ var(Burn) class<DoomBurnTex> BurnClass;
 var(Burn) class<MaterialSequence> FadeClass;
 var(Burn) class<DoomDeResDustSmall> BurnDust;
 var() float MeleeKnockBack,FootstepSndRadius;
-var() class<Projectile> RangedProjectile;
+var() class<DoomProjectile> RangedProjectile;
+var() class<DoomProjectile> SecondaryProjectile;
 var() class<DemonSpawnBase> DoomTeleportFXClass;
 var() byte BurnedTextureNum[2];
+var array<Material> PrecashedMaterials;
+var array<StaticMesh> PrecashedStatics;
 
 var(Anims) bool HasHitAnims;
 var() bool bHasFireWeakness,BigMonster;
@@ -1115,48 +1120,6 @@ function TakeDamage(int Damage, Pawn instigatedBy, Vector hitlocation, Vector mo
 	}
 }
 
-/**
- * Tests if the tracing Ray that hit the target at HitLoc hits also the given target's sphere-shaped hitbox.
- * @param HitLoc location where the tracing ray hit the target's collision cylinder
- * @param Ray normalized direction of the trace line
- * @param SphereLoc the center of the sphere (e.g., Head bone's location for headshot detection)
- * @param SphereRadius the radius of the sphere
- * @pre The function assumes that the sphere is inside the target's collision cylinder
- * @return true if the ray hits the sphere
- */
-static function bool TestHitboxSphere(vector HitLoc, vector Ray, vector SphereLoc, float SphereRadius)
-{
-	local vector HitToSphere;  // vector from HitLoc to SphereLoc
-	local vector P;
-
-	SphereRadius *= SphereRadius; // square it to avoid doing sqrt()
-
-	HitToSphere = SphereLoc - HitLoc;
-	if ( VSizeSquared(HitToSphere) < SphereRadius ) {
-		// HitLoc is already inside the sphere - no projection needed
-		return true;
-	}
-
-	// Let's project SphereLoc to Ray to get the projection point P.
-	//               SphereLoc
-	//              /|
-	//            /  |
-	//          /    |
-	// HitLoc /_ _ _ |  _ _ _ _ _ _ > Ray
-	//              P^     ^M
-	//
-	// If VSize(P - SphereLoc) < SphereRadius, the Ray hits the sphere.
-	// VSize(P - SphereLoc) = sin(A) * vsize(SpereLoc - HitLoc)
-	// A = acos(normal(SphereLoc - HitLoc) dot Ray)
-	// The above solution is simle to understand. However, it is CPU-heavy since it uses 2 trigonometric function calls.
-	// The below algorithm does the same but avoids trigonometry
-
-	// HitToSphere dot Ray = cos(A) * VSize(HitToSphere) = VSize(P - HitLoc)
-	P = HitLoc + Ray * (HitToSphere dot Ray);
-
-	return VSizeSquared(P - SphereLoc) < SphereRadius;
-}
-
 function bool IsHeadShot(vector HitLoc, vector ray, float AdditionalScale)
 {
 	local coords C;
@@ -1202,22 +1165,24 @@ function bool IsHeadShot(vector HitLoc, vector ray, float AdditionalScale)
 		AdditionalScale *= OnlineHeadshotScale;
 	}
 	C = GetBoneCoords(HeadBone);
-	HeadLoc = C.Origin + (HeadHeight * HeadScale * AdditionalScale * C.XAxis)
+	HeadLoc = C.Origin + (HeadHeight * HeadScale * C.XAxis)
 		+ (HeadOffset >> Rotation);
-	bResult = TestHitboxSphere(HitLoc, ray, HeadLoc, HeadRadius * HeadScale * AdditionalScale);
+	bResult = class'ScrnF'.static.TestHitboxSphere(HitLoc, ray, HeadLoc,
+			HeadRadius * HeadScale * AdditionalScale);
 
 	if ( !bResult && HeadBone2 != '' ) {
 		// second head
 		C = GetBoneCoords(HeadBone2);
-		HeadLoc = C.Origin + (HeadHeight * HeadScale * AdditionalScale * C.XAxis)
+		HeadLoc = C.Origin + (HeadHeight * HeadScale * C.XAxis)
 			+ (HeadOffset2 >> Rotation);
-		bResult = TestHitboxSphere(HitLoc, ray, HeadLoc, HeadRadius * HeadScale * AdditionalScale);
+		bResult = class'ScrnF'.static.TestHitboxSphere(HitLoc, ray, HeadLoc,
+				HeadRadius * HeadScale * AdditionalScale);
 	}
 
 	return bResult;
 }
 
-function DoomMonster SpawnChild(class<DoomMonster> SpawnClass, vector SpawnLoc)
+function DoomMonster SpawnChild(class<DoomMonster> SpawnClass, vector SpawnLoc, optional bool bNoTele)
 {
 	local DoomMonster child;
 
@@ -1225,7 +1190,9 @@ function DoomMonster SpawnChild(class<DoomMonster> SpawnClass, vector SpawnLoc)
 	if ( child != none ) {
 		ChildMonsterCounter++;
 		child.MonsterMaster = self;
-		child.NotifyTeleport();
+		if ( !bNoTele ) {
+			child.NotifyTeleport();
+		}
 	}
 	return child;
 }
@@ -1375,37 +1342,62 @@ ignores PostNetReceive;
 	}
 }
 
-
 function float GetExposureTo(vector TestLocation)
 {
-	local float PercentExposed;
-
-
-	if( FastTrace(GetBoneCoords(HeadBone).Origin,TestLocation))
-	{
-		PercentExposed += 0.4;
-	}
-
-	PercentExposed += 0.6;
-	// most doom monsters have different bone names
-	/*
-	if( FastTrace(GetBoneCoords(RootBone).Origin,TestLocation))
-	{
-		PercentExposed += 0.3;
-	}
-
-	if( FastTrace(GetBoneCoords(LeftFootBone).Origin,TestLocation))
-	{
-		PercentExposed += 0.15;
-	}
-
-	if( FastTrace(GetBoneCoords(RightFootBone).Origin,TestLocation))
-	{
-		PercentExposed += 0.15;
-	}
-	*/
-	return PercentExposed;
+	return 1.0;
 }
+
+static function PreCacheMaterialSequence(LevelInfo Level, class<MaterialSequence> MatSeq)
+{
+	local int i;
+
+	if ( MatSeq == none )
+		return;
+
+	for ( i = 0; i < MatSeq.default.SequenceItems.length; ++i ) {
+		Level.AddPrecacheMaterial(MatSeq.default.SequenceItems[i].Material);
+	}
+}
+
+static function PreCacheMaterials(LevelInfo Level)
+{
+	local int i;
+
+	for ( i = 0; i < default.Skins.Length; ++i ) {
+		Level.AddPrecacheMaterial(default.Skins[i]);
+	}
+	Level.AddPrecacheMaterial(default.InvisMat);
+	Level.AddPrecacheMaterial(default.BurningMaterial);
+	if ( default.BurnClass != none ) {
+		Level.AddPrecacheMaterial(default.BurnClass.default.Material);
+	}
+	PreCacheMaterialSequence(Level, default.FadeClass);
+	if ( default.BurnDust != none ) {
+		default.BurnDust.static.PreCacheMaterials(Level);
+	}
+	Level.AddPrecacheMaterial(default.BurnFX);
+	Level.AddPrecacheMaterial(default.FadeFX);
+	Level.AddPrecacheMaterial(default.FadingBurnMaterial);
+
+	if ( default.RangedProjectile != none ) {
+		default.RangedProjectile.static.PreCacheMaterials(Level);
+	}
+	if ( default.SecondaryProjectile != none ) {
+		default.SecondaryProjectile.static.PreCacheMaterials(Level);
+	}
+
+	if ( default.DoomTeleportFXClass != none ) {
+		default.DoomTeleportFXClass.static.PreCacheMaterials(Level);
+	}
+
+	for ( i = 0; i < default.PrecashedMaterials.Length; ++i ) {
+		Level.AddPrecacheMaterial(default.PrecashedMaterials[i]);
+	}
+	for ( i = 0; i < default.PrecashedStatics.Length; ++i ) {
+		Level.AddPrecacheStaticMesh(default.PrecashedStatics[i]);
+	}
+}
+
 
 defaultproperties
 {

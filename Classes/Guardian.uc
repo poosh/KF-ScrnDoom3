@@ -208,8 +208,10 @@ simulated function PostNetReceive()
 
 function TakeDamage(int Damage, Pawn InstigatedBy, vector HitLocation, vector Momentum, class<DamageType> DamageType, optional int HitIndex)
 {
-	if( bRegenSeekers )
-		Super.TakeDamage(Damage,InstigatedBy,HitLocation,Momentum,DamageType,HitIndex);
+	if( !bRegenSeekers )
+		Damage *= 0.1;
+
+	Super.TakeDamage(Damage,InstigatedBy,HitLocation,Momentum,DamageType,HitIndex);
 }
 
 state Charging
@@ -409,7 +411,7 @@ defaultproperties
      MeleeAnims(1)="Attack2"
      MeleeAnims(2)="Attack3"
      MeleeDamage=45
-     ChargeDamageMult=2.4
+     ChargeDamageMult=1.5
      bFatAss=True
      FootStep(0)=Sound'2009DoomMonstersSounds.Guardian.Guardian_step4'
      FootStep(1)=Sound'2009DoomMonstersSounds.Guardian.Guardian_step4'

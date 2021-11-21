@@ -1,11 +1,11 @@
 class Archvile extends DoomMonster;
 
-var() array< class<DoomMonster> > ArchvileSummonMonsters;
 var() byte MaxMonsters;
 var transient float nextFireAttackTime,nextSummonTime;
-var ArchvileHandEffect LeftHandTrail, RightHandTrail;
+var DoomEmitter LeftHandTrail, RightHandTrail;
 var vector SummonPos;
 var class<DoomMonster> SpawningNow;
+
 
 var(Sounds) Sound ResurrectionSound,BreatheSound[2],BurnSounds[5];
 
@@ -39,12 +39,12 @@ function RangedAttack(Actor A)
 				SetAnimAction('RangedAttack2');
 			else SetAnimAction('RangedAttack1');
 		}
-		else if( MaxMonsters > ChildMonsterCounter && nextSummonTime<Level.TimeSeconds && ArchvileSummonMonsters.Length>0 )
+		else if( MaxMonsters > ChildMonsterCounter && nextSummonTime<Level.TimeSeconds && ChildrenMonsters.Length>0 )
 		{
 			nextSummonTime = Level.TimeSeconds+3+FRand()*6.f;
 			if( ChildMonsterCounter > 0 && FRand()<0.5f )
 				return;
-			SpawningNow = ArchvileSummonMonsters[Rand(ArchvileSummonMonsters.Length)];
+			SpawningNow = ChildrenMonsters[Rand(ChildrenMonsters.Length)];
 			if( SpawningNow==None )
 				return;
 			if( !FindSummonPoint(A) )
@@ -85,7 +85,7 @@ simulated function FireProjectile()
 	if ( Level.NetMode!=NM_DedicatedServer )
 		PlaySound(FireSound,SLOT_Misc);
 	if( Level.NetMode!=NM_Client && Controller!=None && Controller.Target!=None )
-		Spawn(class'ArchvileFlameAttackProjectile',,,Controller.Target.Location);
+		Spawn(SecondaryProjectile,,,Controller.Target.Location);
 }
 
 simulated function LightUp()
@@ -149,13 +149,20 @@ function Timer()
 		SetTimer(1,true);
 }
 
+static function PreCacheMaterials(LevelInfo Level)
+{
+	super.PreCacheMaterials(Level);
+
+	class'ArchvileHandEffect'.static.PreCacheMaterials(Level);
+}
+
 defaultproperties
 {
-     ArchvileSummonMonsters(0)=Class'ScrnDoom3KF.Imp'
-     ArchvileSummonMonsters(1)=Class'ScrnDoom3KF.Vulgar'
-     ArchvileSummonMonsters(2)=Class'ScrnDoom3KF.LostSoul'
-     ArchvileSummonMonsters(3)=Class'ScrnDoom3KF.LostSoul' // forgotten replaced by LostSoul in v5.13. Now LostSoul have 2x chance to spawn
-     ArchvileSummonMonsters(4)=Class'ScrnDoom3KF.Maggot'
+     ChildrenMonsters(0)=Class'ScrnDoom3KF.Imp'
+     ChildrenMonsters(1)=Class'ScrnDoom3KF.Vulgar'
+     ChildrenMonsters(2)=Class'ScrnDoom3KF.LostSoul'
+     ChildrenMonsters(3)=Class'ScrnDoom3KF.LostSoul' // forgotten replaced by LostSoul in v5.13. Now LostSoul have 2x chance to spawn
+     ChildrenMonsters(4)=Class'ScrnDoom3KF.Maggot'
      MaxMonsters=4
      ResurrectionSound=Sound'2009DoomMonstersSounds.Archvile.Archvile_Resurrection'
      BreatheSound(0)=Sound'2009DoomMonstersSounds.Archvile.Archvile_Breath2'
