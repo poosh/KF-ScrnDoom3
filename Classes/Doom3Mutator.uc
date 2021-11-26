@@ -441,7 +441,7 @@ final function MakeSmallMap()
 
 defaultproperties
 {
-	VersionNumber=96900
+	VersionNumber=96904
 
 	MinDoomPct=0.10
 	MaxDoomPct=0.20

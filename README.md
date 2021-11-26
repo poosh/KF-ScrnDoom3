@@ -13,6 +13,16 @@ Doom3 Monsters for Killing Floor 1 - ScrN Edition
 # Version History
 *Starting from v5, ScrnDoom3KF version matches the newest version of ScrN Balance available on the release day.*
 
+### v9.69.04
+- **Cyberdemon** and **Revenant** rockets do explosive damage now - so Demolitions Expert has resistance to it.
+- Added parent classes for all Doom3 demon attacks: `DamTypeD3Burned`, `DamTypeD3Melee`, and `DamTypeD3Proj`.
+  All three indirectly extend from `KFWeaponDamageType`
+
+### v9.69
+- Linked to ScrnShared.u
+- Fixed **Vagary** throwing spider ability
+- Reduced **Guardian** melee damage
+
 ### v9.66
 - Enhanced headshot detection on flying monsters
 - Fixed an issue when online head scale was not always applied on dedicated server

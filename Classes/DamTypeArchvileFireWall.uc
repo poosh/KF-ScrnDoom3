@@ -1,14 +1,7 @@
-class DamTypeArchvileFireWall extends DamTypeBurned
-    abstract;
+class DamTypeArchvileFireWall extends DamTypeD3Burned
+	abstract;
 
 defaultproperties
 {
-     DeathString="%o was sent to hell by %k."
-     bDetonatesGoop=True
-     bDelayedDamage=True
-     bThrowRagdoll=True
-     bFlaming=True
-     GibPerterbation=0.150000
-     KDamageImpulse=20000.000000
-     VehicleMomentumScaling=1.300000
+	DeathString="%o was sent to hell by %k."
 }

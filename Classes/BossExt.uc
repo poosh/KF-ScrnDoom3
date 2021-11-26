@@ -235,14 +235,14 @@ defaultproperties
 	 TeleportHealthPct(2)=0.25
 	 strHelp(0)="%n: Creatures of Hell, come and help me to defeat mortals!"
 	 strHelp(1)="%n: Say 'Hello!' to my little friends!"
-	 strHelp(2)="%n: Help me, my children, to bring Hell on the Earth!"
+	 strHelp(2)="%n: Help me, my children, to bring Hell on Earth!"
 	 strHelp(3)="%n: This Fight is only just begun!"
 	 strHelp(4)="%n: Welcome to your Death, mortals!"
 	 strHelp(5)="%n: Worthless humans, your souls will belong to me!"
 	 strRest(0)="%n: Time to rest"
 	 strRest(1)="%n: I'm out. See you later."
 	 BossAidArray(0)=(MonsterClass=Class'ScrnDoom3KF.FatZombie',Count=4,NextSpawnCooldown=15.000000)
-	 BossAidArray(1)=(MonsterClass=Class'ScrnDoom3KF.Boney',Count=3,NextSpawnCooldown=15.000000)
+	 BossAidArray(1)=(MonsterClass=Class'ScrnDoom3KF.LostSoul',Count=2,NextSpawnCooldown=15.000000)
 	 BossAidArray(2)=(MonsterClass=Class'ScrnDoom3KF.Maggot',Count=1,NextSpawnCooldown=15.000000)
 	 BossAidArray(3)=(MonsterClass=Class'ScrnDoom3KF.Imp',Count=2,NextSpawnCooldown=20.000000)
 	 BossAidArray(4)=(MonsterClass=Class'ScrnDoom3KF.Pinky',Count=1,NextSpawnCooldown=20.000000)

@@ -3,5 +3,6 @@ class DamTypeD3Melee extends ZombieMeleeDamage
 
 defaultproperties
 {
-     DeathString="%o was hacked by %k."
+	DeathString="%o was hacked by %k."
+	bCheckForHeadShots=false
 }
