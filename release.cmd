@@ -45,6 +45,8 @@ if not exist %RELEASEDIR%\System\%KFPACKAGE%.u (
 echo.
 echo Updating the bundle...
 xcopy /F /I /Y %RELEASEDIR%\System\*                %BUNDLEDIR%\System\
+xcopy /F /I /Y %RELEASEDIR%\Doom3KF.ini             %BUNDLEDIR%\System\
+xcopy /F /I /Y %RELEASEDIR%\ScrnDoom3KF.ini         %BUNDLEDIR%\System\
 
 echo.
 echo Compressing uz2...

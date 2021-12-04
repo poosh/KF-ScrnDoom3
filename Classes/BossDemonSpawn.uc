@@ -1,43 +1,28 @@
 class BossDemonSpawn extends DemonSpawnBase;
 
-var class<KFMonster> DM;
+var class<DoomMonster> DM;
 
 simulated function PostBeginPlay()
 {
-	if( Level.NetMode!=NM_DedicatedServer )
+	if( Level.NetMode != NM_DedicatedServer )
 		Spawn(class'DoomSymbolProjector',,,Location + vect(0,0,10));
-	if( Level.NetMode!=NM_Client )
-		SetTimer(TeleportInTime,false);
+
+	if( Level.NetMode != NM_Client )
+		SetTimer(TeleportInTime, false);
 }
+
 function Timer()
 {
-	local KFMonster M;
-    local float OriginalPlayerCountHealthScale;
+	local DoomMonster M;
 
-	if( DM==None )
-		return;
-
-    OriginalPlayerCountHealthScale = DM.default.PlayerCountHealthScale;
-    DM.default.PlayerCountHealthScale = Class'Doom3Mutator'.Default.BossPerPlayerHP;
-	if( Class<DoomMonster>(DM)!=None ) {
-		Class<DoomMonster>(DM).Default.bIsBossSpawn = true;
+	if ( DM != none ) {
 		M = Spawn(DM);
-		Class<DoomMonster>(DM).Default.bIsBossSpawn = false;
+		if ( M != none ) {
+			M.NotifyTeleport();
+		}
 	}
-	else
-        M = Spawn(DM);
-    DM.default.PlayerCountHealthScale = OriginalPlayerCountHealthScale;
-	if( M==None )
-		return;
-	KFGameType(Level.Game).TotalMaxMonsters*=Class'Doom3Mutator'.Default.BossWaveReduction; // Reduce monsters in wave because of boss.
-	KFGameReplicationInfo(Level.Game.GameReplicationInfo).MaxMonsters = KFGameType(Level.Game).TotalMaxMonsters;
-    //increase bounty for defeating the boss with same scale as increasing its health
-    M.ScoringValue = 500 * (1.0 + Class'Doom3Mutator'.Default.BossPerPlayerHP * fmax(Level.Game.NumPlayers-1,0));
-    M.default.ScoringValue = M.ScoringValue;
-    M.ZapThreshold = 5;
-	if( DoomMonster(M)!=None )
-		DoomMonster(M).NotifyTeleport();
-	if( Level.NetMode==NM_DedicatedServer )
+
+	if( Level.NetMode == NM_DedicatedServer )
 		Destroy();
 }
 

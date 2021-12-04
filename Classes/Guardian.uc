@@ -429,7 +429,7 @@ defaultproperties
      ChallengeSound(2)=Sound'2009DoomMonstersSounds.Guardian.Guardian_sight2_1'
      ChallengeSound(3)=Sound'2009DoomMonstersSounds.Guardian.Guardian_sight1_1'
      FireSound=Sound'2009DoomMonstersSounds.Guardian.guardian_fire_flare_up'
-     ScoringValue=750
+     OriginalScoringValue=1000
      WallDodgeAnims(0)="Walk"
      WallDodgeAnims(1)="Walk"
      WallDodgeAnims(2)="Walk"
@@ -445,7 +445,6 @@ defaultproperties
      GroundSpeed=200.000000
      HealthMax=5000.000000
      Health=5000
-     PlayerCountHealthScale=0.75
      MenuName="Guardian"
      ControllerClass=Class'ScrnDoom3KF.GuardianAI'
      MovementAnims(0)="Walk"

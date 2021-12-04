@@ -109,7 +109,7 @@ function bool CanKillMeYet()
 	local Controller C;
     local bool bBoss;
 
-    bBoss = DoomMonster(KFM) != none && DoomMonster(KFM).bIsBossSpawn;
+    bBoss = DoomBoss(KFM) != none;
 
 	if( !bInitKill )
 	{

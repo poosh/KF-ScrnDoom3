@@ -13,6 +13,12 @@ Doom3 Monsters for Killing Floor 1 - ScrN Edition
 # Version History
 *Starting from v5, ScrnDoom3KF version matches the newest version of ScrN Balance available on the release day.*
 
+### v9.69.09
+- Doom3Mutator now can spawn only Doom Monsters. Use either ScrN Balance or Zed Manager to spawn custom mobs.
+- Deprecated `LargeMaps` because all Doom Bosses can spawn on all maps.
+- Server-side `[ScrnDoom3KF.Doom3Mutator]` moved from *Doom3KF.ini* to *ScrnDoom3KF.ini* and heavily reworked.
+- Client-side `[Doom3Karma D3Karma]` left in *Doom3KF.ini*.
+
 ### v9.69.04
 - **Cyberdemon** and **Revenant** rockets do explosive damage now - so Demolitions Expert has resistance to it.
 - Added parent classes for all Doom3 demon attacks: `DamTypeD3Burned`, `DamTypeD3Melee`, and `DamTypeD3Proj`.

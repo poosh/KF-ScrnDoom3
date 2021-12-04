@@ -312,7 +312,6 @@ defaultproperties
 	ChallengeSound(2)=Sound'2009DoomMonstersSounds.Vagary.Vagary_chatter_combat3'
 	ChallengeSound(3)=Sound'2009DoomMonstersSounds.Vagary.Vagary_wake_solo'
 	FireSound=Sound'2009DoomMonstersSounds.Vagary.Vagary_range_attack'
-	ScoringValue=750
 	WallDodgeAnims(0)="DodgeL"
 	WallDodgeAnims(1)="DodgeR"
 	WallDodgeAnims(2)="DodgeL"
@@ -329,7 +328,6 @@ defaultproperties
 	GroundSpeed=250.000000
 	HealthMax=7000
 	Health=7000
-	PlayerCountHealthScale=0.75
 	HeadRadius=10
 	MenuName="Vagary"
 	MovementAnims(0)="Walk"

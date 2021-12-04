@@ -162,7 +162,7 @@ defaultproperties
      ChallengeSound(1)=Sound'2009DoomMonstersSounds.CyberDemon.CyberDemon_chatter2'
      ChallengeSound(2)=Sound'2009DoomMonstersSounds.CyberDemon.CyberDemon_chatter1'
      ChallengeSound(3)=Sound'2009DoomMonstersSounds.CyberDemon.CyberDemon_sight1'
-     ScoringValue=1000
+     OriginalScoringValue=1000
      FootstepVolume=2.000000
      WallDodgeAnims(0)="Walk"
      WallDodgeAnims(1)="Walk"
@@ -179,7 +179,6 @@ defaultproperties
      GroundSpeed=210.000000
      HealthMax=7000.000000
      Health=7000
-     PlayerCountHealthScale=0.75
      HeadRadius=24.000000
      MenuName="CyberDemon"
      ControllerClass=Class'ScrnDoom3KF.CyberDemonAI'

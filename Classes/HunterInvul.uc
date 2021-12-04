@@ -409,7 +409,6 @@ defaultproperties
 	ChallengeSound(2)=Sound'2009DoomMonstersSounds.Hunter.Hunter_mono_growl_03'
 	ChallengeSound(3)=Sound'2009DoomMonstersSounds.Hunter.Hunter_mono_growl_27'
 	FireSound=Sound'2009DoomMonstersSounds.Hunter.Hunter_fb_prefire_03'
-	ScoringValue=750
 	FootstepVolume=1.400000
 	WallDodgeAnims(0)="Walk"
 	WallDodgeAnims(1)="Walk"
@@ -427,7 +426,6 @@ defaultproperties
 	GroundSpeed=200.000000
 	HealthMax=6500.000000
 	Health=6500
-	PlayerCountHealthScale=0.75
 	HeadRadius=20
 	MenuName="Invulnerability Hunter"
 	MovementAnims(0)="Walk1"

@@ -1,6 +1,6 @@
 // Boss - PAT Replacement extension, providing boss wave with additional features
 // (c) PooSH
-class BossExt extends Actor;
+class BossExt extends Info;
 
 var DoomMonster Boss;
 
@@ -189,7 +189,7 @@ function AddMonsters(BossAid A)
 	LastUsedSpawnPoint = N; //save last point we used for next time
 
 	if (SummonedCount > 0) {
-		Boss.SayToPlayers(strHelp[rand(strHelp.length)] @ "("$HealthFactor$")", true); //post a message to players, so they'll know that new monsters are spawning
+		Boss.SayToPlayers(strHelp[rand(strHelp.length)], true); //post a message to players, so they'll know that new monsters are spawning
 		LastSpawnTime = Level.TimeSeconds;
 	}
 	TeleportFXEndTime = fmax(A.MonsterClass.Default.DoomTeleportFXClass.Default.TeleportInTime, 0.5);

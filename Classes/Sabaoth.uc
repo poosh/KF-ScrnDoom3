@@ -155,7 +155,7 @@ defaultproperties
 	ChallengeSound(2)=Sound'2009DoomMonstersSounds.Sabaoth.Sabaoth_taunt_06English'
 	ChallengeSound(3)=Sound'2009DoomMonstersSounds.Sabaoth.Sabaoth_taunt_03'
 	FireSound=Sound'2009DoomMonstersSounds.BFG.bfg_fire'
-	ScoringValue=900
+	OriginalScoringValue=900
 	WallDodgeAnims(0)="Travel"
 	WallDodgeAnims(1)="Travel"
 	WallDodgeAnims(2)="Travel"
@@ -172,7 +172,6 @@ defaultproperties
 	GroundSpeed=170.000000
 	HealthMax=7500.000000
 	Health=7500
-	PlayerCountHealthScale=0.75
 	HeadRadius=15.000000
 	MenuName="Sabaoth"
 	ControllerClass=Class'ScrnDoom3KF.SabaothAI'

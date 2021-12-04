@@ -36,7 +36,6 @@ var() bool bHasFireWeakness,BigMonster;
 var bool Collapsing,bEndGameBoss;
 var bool Burning;
 var bool bHasRoamed;
-var bool bIsBossSpawn;
 
 var byte RagdollStateNum;
 var DoomDeResDustSmall Sparks;
@@ -114,13 +113,6 @@ simulated function RemoveFlamingEffects()
 			Attached[i].LifeSpan = 2;
 		}
 	}
-}
-
-event bool EncroachingOn( actor Other )
-{
-	if( bIsBossSpawn && Pawn(Other)!=None )
-		return false;
-	return Super.EncroachingOn(Other);
 }
 
 function PlayChallengeSound()
@@ -804,8 +796,9 @@ function bool SetBossLaught()
 //Allow server admin to configure different player scaling between in-game bosses and Pat replacement
 function bool MakeGrandEntry()
 {
-	Health*= Class'Doom3Mutator'.Default.PatBossMult; // (c) PooSH
+	Health *= Class'Doom3Mutator'.Default.EndGameBossHealthMult;
 	HealthMax = Health;
+	HeadHealth = HealthMax;
 	ZapThreshold=10;
 	RoamAtPlayer();
 	bEndGameBoss = true;

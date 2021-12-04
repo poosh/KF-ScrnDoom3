@@ -249,7 +249,7 @@ defaultproperties
      ChallengeSound(1)=Sound'2009DoomMonstersSounds.Maledict.Maledict_scream_04'
      ChallengeSound(2)=Sound'2009DoomMonstersSounds.Maledict.Maledict_scream_07'
      ChallengeSound(3)=Sound'2009DoomMonstersSounds.Maledict.Maledict_scream_09'
-     ScoringValue=900
+     OriginalScoringValue=900
      WallDodgeAnims(0)="FlapFast"
      WallDodgeAnims(1)="FlapFast"
      WallDodgeAnims(2)="FlapFast"
@@ -268,7 +268,6 @@ defaultproperties
      AirSpeed=500.000000
      HealthMax=4000.000000
      Health=4000
-     PlayerCountHealthScale=0.75
      HeadRadius=50
      MenuName="Maledict"
      bPhysicsAnimUpdate=False

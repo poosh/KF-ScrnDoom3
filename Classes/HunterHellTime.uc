@@ -363,7 +363,6 @@ defaultproperties
      ChallengeSound(2)=Sound'2009DoomMonstersSounds.Hunter.Hunter_mono_growl_03'
      ChallengeSound(3)=Sound'2009DoomMonstersSounds.Hunter.Hunter_mono_growl_27'
      FireSound=Sound'2009DoomMonstersSounds.Hunter.Hunter_fb_prefire_03'
-     ScoringValue=750
      WallDodgeAnims(0)="DodgeL"
      WallDodgeAnims(1)="DodgeR"
      WallDodgeAnims(2)="DodgeL"
@@ -381,7 +380,6 @@ defaultproperties
      GroundSpeed=300.000000
      HealthMax=4500.000000
      Health=4500
-     PlayerCountHealthScale=0.75
      HeadRadius=16.000000
      MenuName="HellTime Hunter"
      ControllerClass=Class'ScrnDoom3KF.HunterHellTimeAI'
