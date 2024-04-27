@@ -407,7 +407,7 @@ function NavigationPoint PickCloseTeleportDest()
 
 
 	Player = Players[rand(Players.length)];
-	MinDistSq = (Player.CollisionRadius + KFM.CollisionRadius) * (Player.CollisionRadius + KFM.CollisionRadius);
+	MinDistSq = (Player.CollisionRadius + KFM.CollisionRadius + 100) ** 2;
 	foreach Player.RadiusActors(class'NavigationPoint', N, 1000) {
 		// same floor, in 20m radius
 		if ( (Player.Location.Z - N.Location.Z < 200)
@@ -476,8 +476,8 @@ function bool FindTeleportDest(bool bUseClosePoints, bool bUseBestPoints)
 
 	r = frand();
 
-	// 10% change to spawn close to players, or 50%, if all monsters are spawned already
-	if ( bUseClosePoints && (r > 0.9 || ( KFGameType(Level.Game).TotalMaxMonsters == 0 && r > 0.5 )) )
+	// 20% change to spawn close to players, or 75%, if all monsters are spawned already
+	if ( bUseClosePoints && (r > 0.80 || (r > 0.25 && KFGameType(Level.Game).TotalMaxMonsters == 0)) )
 		N = PickCloseTeleportDest();
 
 	// do not use best spots, if all monsters were spawned already
@@ -550,7 +550,7 @@ state ZombieHunt
 	{
 		if ( NextTeleTimeOnHunt == 0 ) {
 			TeleDelayCount = 0;
-			NextTeleTimeOnHunt = 10.0 + (10.0 + 5*TeleCount) * frand() + Pawn.Health/100.0
+			NextTeleTimeOnHunt = 10.0 + (10.0 + 5*TeleCount) * frand() + fmin(20.0, Pawn.Health/100.0)
 					+ fmin(60.0, 5.0*TeleCount);
 			if ( Pawn.bCanFly )
 				NextTeleTimeOnHunt *= 2.0;

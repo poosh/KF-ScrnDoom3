@@ -13,6 +13,17 @@ Doom3 Monsters for Killing Floor 1 - ScrN Edition
 # Version History
 *Starting from v5, ScrnDoom3KF version matches the newest version of ScrN Balance available on the release day.*
 
+### v9.69.45
+- Invulnerability Hunter renamed to **Electro Hunter**
+- Electro Hunter shield damage reduction set to 90%. While shielded, he receives 10% of incoming damage instead of being completely invulnerable (same as Guardian).
+- Electro Hunter shield longevity raised from to 30..45s (up from 20..30s). However, each electric projectile fired consumes the shield energy equal to 5s.
+- Electro Hunter shield cooldown raised to 8..12s (up from 4..9s).
+- New monster **Chaser** - Electro Hunter's cousin for **Escape the Hunter** game mode. Chaser has less health but his shield stays longer.
+- **Guardian** melee damage lowered by 25%. How it cannot instantly kill a 100hp player.
+- **Seeker** lifespan lowered to 30..45s (down from 30..90s).
+- Seekers cannot teleport anymore.
+- *ScrnDoom3KF.ini*: added `bBossChat`
+
 ### v9.69.09
 - Doom3Mutator now can spawn only Doom Monsters. Use either ScrN Balance or Zed Manager to spawn custom mobs.
 - Deprecated `LargeMaps` because all Doom Bosses can spawn on all maps.

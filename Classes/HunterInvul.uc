@@ -13,6 +13,7 @@ var class<DamageType> ShockWaveDamageType;
 var Emitter ElecX[11];
 var bool bIsInvulnerable,bClientInvulnerable;
 var int NumMultiFires;
+var float ShieldDamageMult;
 
 replication
 {
@@ -25,10 +26,12 @@ simulated function PostNetReceive()
 	if( bIsInvulnerable!=bClientInvulnerable )
 		SetInvulnerability();
 }
+
 simulated function SetInvulnerability()
 {
 	local byte i;
 
+	bHasFireWeakness = !bIsInvulnerable;
 	if( bIsInvulnerable==bClientInvulnerable )
 		return;
 	bClientInvulnerable = bIsInvulnerable;
@@ -144,7 +147,7 @@ function RangedAttack(Actor A)
 		}
 		else {
 			// range attack
-			NextShockwaveTime -= 2.0;  // Hunter uses shield to charge projectile
+			NextShockwaveTime -= 5.0;  // Hunter uses shield to charge projectile
 			PrepareStillAttack(A);
 			PlaySound(PreFireSound,SLOT_Interact);
 			SetAnimAction(RangedAttacks[Rand(3)]);
@@ -227,7 +230,7 @@ simulated function ElectroWave()
 	local vector dir;
 	local float damageScale, dist, Momentum;
 
-	NextRangedAttack = Level.TimeSeconds+4.f+FRand()*5.f;
+	NextRangedAttack = Level.TimeSeconds + 8.0 + 4.0*frand();
 	bIsInvulnerable = false;
 	SetInvulnerability();
 	if( Level.NetMode!=NM_DedicatedServer )
@@ -255,7 +258,7 @@ simulated function Charge()
 
 	bIsInvulnerable = true;
 	SetInvulnerability();
-	NextShockwaveTime = Level.TimeSeconds + 20.f + FRand()*10.f;
+	NextShockwaveTime = Level.TimeSeconds + 30.f + 15.0*frand();
 
 	if( Level.NetMode==NM_DedicatedServer )
 		return;
@@ -344,9 +347,11 @@ simulated function BurnAway()
 
 function TakeDamage( int Damage, Pawn InstigatedBy, vector HitLocation, vector Momentum, class<DamageType> DamageType, optional int HitIndex )
 {
-	if( !bIsInvulnerable )
-		Super.TakeDamage(Damage,InstigatedBy,HitLocation,Momentum,DamageType,HitIndex);
-	else PlaySound(ShieldedHit[Rand(4)],SLOT_Misc,0.8f);
+	if (bIsInvulnerable) {
+		PlaySound(ShieldedHit[Rand(4)],SLOT_Misc,0.8f);
+		Damage *= ShieldDamageMult;
+	}
+	Super.TakeDamage(Damage,InstigatedBy,HitLocation,Momentum,DamageType,HitIndex);
 }
 
 
@@ -427,7 +432,8 @@ defaultproperties
 	HealthMax=6500.000000
 	Health=6500
 	HeadRadius=20
-	MenuName="Invulnerability Hunter"
+	ShieldDamageMult=0.1
+	MenuName="Electro Hunter"
 	MovementAnims(0)="Walk1"
 	MovementAnims(1)="Walk1"
 	MovementAnims(2)="Walk1"

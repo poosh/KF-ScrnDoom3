@@ -8,6 +8,7 @@ class DoomMonster extends KFMonster
 #exec obj load file="2009DoomMonstersAnims"
 #exec obj load file="2009DoomMonstersSM"
 
+var Doom3Mutator Mut;
 var DoomMonster MonsterMaster;
 var array< class<DoomMonster> > ChildrenMonsters;
 var byte ChildMonsterCounter;
@@ -311,6 +312,9 @@ simulated function Tick(float DeltaTime)
 function bool SayToPlayers(string msg, optional bool ForceSay)
 {
 	local Controller C;
+
+	if (Mut == none || !Mut.bBossChat)
+		return false;
 
 	if ( !ForceSay && NextChatTime > Level.TimeSeconds )
 		return false;

@@ -14,7 +14,7 @@ simulated function PostBeginPlay()
 	Super.PostBeginPlay();
 
 	InvulnerableTimer += Level.TimeSeconds;
-	DeathTimer *= 0.5 + frand();
+	DeathTimer += 15.0 * frand();
 	DeathTimer += Level.TimeSeconds;
 
 	if( Level.NetMode!=NM_DedicatedServer )
@@ -266,5 +266,5 @@ defaultproperties
 
      MotionDetectorThreat=0 //5.14
      InvulnerableTimer=2
-     DeathTimer=60
+     DeathTimer=30
 }

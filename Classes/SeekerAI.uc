@@ -126,6 +126,12 @@ Backoff:
 }
 state ZombieHunt
 {
+	function BeginState()
+	{
+		super.BeginState();
+		NextTeleTimeOnHunt = Level.TimeSeconds + 999; // do not teleport
+	}
+
 	function PickDestination()
 	{
 		local vector nextSpot, ViewSpot,Dir;

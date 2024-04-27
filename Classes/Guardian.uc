@@ -243,7 +243,7 @@ state Charging
 	{
 		DetectedTargets.length = 0;
 		MeleeDamage /= ChargeDamageMult;
-		NextChargeTime = Level.TimeSeconds+5+FRand()*6.f;
+		NextChargeTime = Level.TimeSeconds + 2*(15.0 - Level.Game.GameDifficulty) + 10.0*frand();
 		MaxDesiredSpeed = 1.f;
 		bChargingNow = False;
 		if( Level.NetMode!=NM_DedicatedServer )
@@ -410,7 +410,7 @@ defaultproperties
      MeleeAnims(0)="Attack1"
      MeleeAnims(1)="Attack2"
      MeleeAnims(2)="Attack3"
-     MeleeDamage=45
+     MeleeDamage=36
      ChargeDamageMult=1.5
      bFatAss=True
      FootStep(0)=Sound'2009DoomMonstersSounds.Guardian.Guardian_step4'

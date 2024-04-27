@@ -12,7 +12,7 @@ var float WaveSpawnRate;
 var transient int SquadCounter;
 var config float MinSpawnDelay,MaxSpawnDelay;
 var config float BossWaveReduction,BossWaveRate,BossStartWaves,EndGameBossHealthMult;
-var config bool bSpawnDemons, bSpawnBosses, bReplaceEndGameBoss;
+var config bool bSpawnDemons, bSpawnBosses, bReplaceEndGameBoss, bBossChat;
 var config array<string> Demons, MidGameBosses, EndGameBosses;
 
 var int LastScannedWave;
@@ -394,6 +394,9 @@ function bool CheckReplacement(Actor Other, out byte bSuperRelevant)
 		}
 		DoomPct = float(DoomMonsters) / TotalMonsters;
 	}
+	else if ( DoomMonster(Other) != none ) {
+		DoomMonster(Other).Mut = self;
+	}
 	return true;
 }
 
@@ -411,7 +414,7 @@ function Mutate(string MutateString, PlayerController Sender)
 
 defaultproperties
 {
-	VersionNumber=96909
+	VersionNumber=96945
 
 	MinDoomPct=0.10
 	MaxDoomPct=0.20
