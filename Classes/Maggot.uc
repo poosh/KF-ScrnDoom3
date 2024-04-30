@@ -214,7 +214,7 @@ defaultproperties
      ChallengeSound(1)=Sound'2009DoomMonstersSounds.Maggot.Maggot_idle_02'
      ChallengeSound(2)=Sound'2009DoomMonstersSounds.Maggot.Maggot_hiss3h2'
      ChallengeSound(3)=Sound'2009DoomMonstersSounds.Maggot.Maggot_idle_03'
-     ScoringValue=28
+     ScoringValue=20
      WallDodgeAnims(0)="DodgeL"
      WallDodgeAnims(1)="DodgeR"
      WallDodgeAnims(2)="DodgeL"
@@ -286,10 +286,10 @@ defaultproperties
      bUseExtendedCollision=True
      ColOffset=(Y=0,Z=0)
      ColRadius=45.000000
-     ColHeight=30.000000        
+     ColHeight=30.000000
 
      MotionDetectorThreat=0.50 //5.14
-     
+
      HeadBone="Rhead" //7.00
      HeadBone2="Lhead" //8.11
      HeadRadius=12

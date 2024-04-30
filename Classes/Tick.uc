@@ -137,7 +137,7 @@ defaultproperties
 	ChallengeSound(1)=Sound'2009DoomMonstersSounds.Tick.tick_sight3'
 	ChallengeSound(2)=Sound'2009DoomMonstersSounds.Tick.Tick_chirp5'
 	ChallengeSound(3)=Sound'2009DoomMonstersSounds.Tick.Tick_chirp6'
-	ScoringValue=10
+	ScoringValue=7
 	WallDodgeAnims(0)="DodgeL"
 	WallDodgeAnims(1)="DodgeR"
 	WallDodgeAnims(2)="DodgeL"

@@ -13,6 +13,9 @@ Doom3 Monsters for Killing Floor 1 - ScrN Edition
 # Version History
 *Starting from v5, ScrnDoom3KF version matches the newest version of ScrN Balance available on the release day.*
 
+### v9.69.50
+- Adjusted bounty of some demons
+
 ### v9.69.45
 - Invulnerability Hunter renamed to **Electro Hunter**
 - Electro Hunter shield damage reduction set to 90%. While shielded, he receives 10% of incoming damage instead of being completely invulnerable (same as Guardian).

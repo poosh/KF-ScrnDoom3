@@ -193,6 +193,9 @@ function bool IsInMeleeRange( Actor A, optional float ExtendedRange )
 {
 	local vector D;
 
+	if (A == none)
+		return false;
+
 	if( A.IsA('KFDoorMover') )
 		return true;
 	D = A.Location-Location;

@@ -176,7 +176,7 @@ defaultproperties
      ChallengeSound(1)=Sound'2009DoomMonstersSounds.Wraith.Wraith_chatter2'
      ChallengeSound(2)=Sound'2009DoomMonstersSounds.Wraith.Wraith_chatter3'
      ChallengeSound(3)=Sound'2009DoomMonstersSounds.Wraith.Wraith_chatter4'
-     ScoringValue=35
+     ScoringValue=30
      WallDodgeAnims(0)="DodgeL"
      WallDodgeAnims(1)="DodgeR"
      WallDodgeAnims(2)="DodgeL"

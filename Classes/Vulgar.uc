@@ -253,7 +253,7 @@ defaultproperties
      ChallengeSound(2)=Sound'2009DoomMonstersSounds.Vulgar.Vulgar_sight_04'
      ChallengeSound(3)=Sound'2009DoomMonstersSounds.Vulgar.Vulgar_sight_05'
      FireSound=Sound'2009DoomMonstersSounds.Vulgar.Vulgar_fireball_create_02'
-     ScoringValue=40
+     ScoringValue=34
      WallDodgeAnims(0)="DodgeL"
      WallDodgeAnims(1)="DodgeR"
      WallDodgeAnims(2)="DodgeL"
