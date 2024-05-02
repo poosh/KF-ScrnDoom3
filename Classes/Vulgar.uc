@@ -2,10 +2,8 @@ class Vulgar extends DoomMonster;
 
 var(Sounds) Sound FireBallCreate;
 var(Anims) name RangedAttackAnims[2];
-var() byte LungeAttackDamage;
 
 var transient float NextRangedTime,NextLungeTime;
-var bool bLunging;
 
 var VulgarHandTrail FireTrail;
 var MaterialSequence FadeFXTail;
@@ -23,7 +21,7 @@ simulated function PostBeginPlay()
 
 function bool ShouldTryRanged( Actor A )
 {
-	return (NextRangedTime<Level.TimeSeconds && FRand()<0.4f);
+	return NextRangedTime < Level.TimeSeconds && FRand() < 0.5 && VSizeSquared(A.Location-Location) < 1000000.0;
 }
 
 function RangedAttack(Actor A)
@@ -31,26 +29,35 @@ function RangedAttack(Actor A)
 	if ( bShotAnim )
 		return;
 
-	if( !bHasRoamed )
+	if( !bHasRoamed ) {
 		RoamAtPlayer();
-	else if( IsInMeleeRange(A) )
-	{
+		return;
+	}
+
+	if( IsInMeleeRange(A) ) {
 		PrepareStillAttack(A);
 		SetAnimAction(MeleeAnims[Rand(3)]);
+		return;
 	}
-	else if( NextLungeTime<Level.TimeSeconds && VSize(A.Location-Location)<600.f )
-	{
+
+	if (NextLungeTime<Level.TimeSeconds && VSizeSquared(A.Location-Location) < 360000.0) {
 		NextLungeTime = Level.TimeSeconds+2.f+FRand()*6.f;
-		if( FRand()<0.3f )
+		if (FRand() < 0.7) {
+			PrepareStillAttack(A);
+			SetAnimAction('JumpStart');
 			return;
-		PrepareStillAttack(A);
-		SetAnimAction('JumpStart');
+		} // else continue with ranged attack
 	}
-	else if( NextRangedTime<Level.TimeSeconds )
-	{
-		PrepareStillAttack(A);
-		SetAnimAction(RangedAttackAnims[Rand(2)]);
-		NextRangedTime = Level.TimeSeconds+2.f+FRand()*3.f;
+
+	if (NextRangedTime < Level.TimeSeconds) {
+		if (VSizeSquared(A.Location-Location) < 1000000.0) {
+			PrepareStillAttack(A);
+			SetAnimAction(RangedAttackAnims[Rand(2)]);
+			NextRangedTime = Level.TimeSeconds + 2.0 + 3.0*frand();
+		}
+		else {
+			NextRangedTime = Level.TimeSeconds + 0.5 + 2.0*frand();
+		}
 	}
 }
 simulated function AnimEnd(int Channel)
@@ -81,6 +88,7 @@ simulated function AnimEnd(int Channel)
 	}
 	Super.AnimEnd(Channel);
 }
+
 singular function Bump(actor Other)
 {
 	if( Level.NetMode!=NM_Client && bLunging && Controller!=None && Other==Controller.Target )
@@ -90,6 +98,7 @@ singular function Bump(actor Other)
 	}
 	Super.Bump(Other);
 }
+
 function Landed(vector HitNormal)
 {
 	if( bLunging )
@@ -211,7 +220,7 @@ defaultproperties
      FireBallCreate=Sound'2009DoomMonstersSounds.Vulgar.Vulgar_fireball_create_01'
      RangedAttackAnims(0)="RangedAttack1"
      RangedAttackAnims(1)="RangedAttack2"
-     LungeAttackDamage=18
+     LungeAttackDamage=27
      FadeTailClass=Class'ScrnDoom3KF.VulgarTailMaterialSequence'
      DeathAnims(0)="DeathF"
      DeathAnims(1)="DeathB"
@@ -236,7 +245,7 @@ defaultproperties
      MeleeAnims(0)="Attack1"
      MeleeAnims(1)="Attack2"
      MeleeAnims(2)="Attack3"
-     MeleeDamage=8
+     MeleeDamage=18
      FootStep(0)=Sound'2009DoomMonstersSounds.Vulgar.Vulgar_step_01a'
      FootStep(1)=Sound'2009DoomMonstersSounds.Vulgar.Vulgar_step_02a'
      DodgeSkillAdjust=4.000000

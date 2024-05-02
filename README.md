@@ -13,6 +13,27 @@ Doom3 Monsters for Killing Floor 1 - ScrN Edition
 # Version History
 *Starting from v5, ScrnDoom3KF version matches the newest version of ScrN Balance available on the release day.*
 
+### v9.69.51
+- Fixed a bug where Doom projectiles collided with `KFBulletWhipAttachment` - an auxiliary cylinder around players. As a result, players were 3x wider (from the projectile's perspective), making it ridiculously hard to dodge projectiles. On the other hand, Doom projectiles dealt ~30% less damage due to exploding farther from the player. In other words, ranged Doom Demons were acting like KF2 - dealing inevitable but low damage. After the fix, they fit more into KF1 - projectiles can be avoided but deal crucial damage when hit, rewarding skill over RNG.
+- Doom AI Skill level is now scaled across difficulties, allowing ranged Doom Demons to aim better on Suicidal or Hell on Earth. Previously, Doom AI was always "Skilled". Now, it is "Masterful" on Suicidal and "Godlike" on Hell on Earth (speaking in Unreal Tournament terms). Higher-skilled enemies can predict player movement and shoot ahead, or even shoot at the ground below the target for splash damage.
+- Fixed a bug where Lunge/jump attack damage didn't scale across difficulties. This affects **Berserker**, **Maggot**, **Imp**, **Vulgar**, **Tic**, **Trite**.
+- Fixed **Maggot**. Previously, it tended to get stuck in attack preparation animation.
+- Short-ranged demons (**Imp**, **Vulgar**, **Hell Knight**) don't try to throw their fire/plasma balls from far away (and always miss).
+- **Tic**, **Trite**: Increased spider () jump range but lowered the damage.
+- **Vulgar**: Significantly boosted melee/lunge damage from 8/18 to 18/27 (+lunge damage scale fix) to fit its role as an advanced version of Imp.
+- **Revenant**: increased rocket homing effect to mitigate the player collision fix.
+- **Revenant**: rockets can now be destroyed with explosions (150 unperked damage required).
+- **Revenant**: Fixed a netcode issue where destoyed rockets continued to fly on the client side (but did no damage). Yes, you could always destroy the rockets with bullets by dealing 150 unperked damage.
+- **Mancubus**, **Hell Knight** choose a ranged attack more ofter when low on health.
+- **Vagary**: adjusted ranged attack rate, including spider throw.
+- Fixed an issue when **Vagary** was throwing spiders non-stop when low on health.
+- **Berserker**: increased melee damage as it was over-nerfed in v9.62.
+- **Sabaoth**: BFG charge time lowered to 0.5 (down from 0.5s).
+- **Sabaoth**: Increased BFG cell's collision to match the visual size.
+- **Sabaoth**: BFG cell deals additional damage on direct hit.
+- **Sabaoth**: The explosion of a destoryed BFG cell (shot by players) no longer damages the players around.
+-
+
 ### v9.69.50
 - Adjusted bounty of some demons
 

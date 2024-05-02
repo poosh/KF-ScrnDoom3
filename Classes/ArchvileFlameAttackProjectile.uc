@@ -35,34 +35,6 @@ simulated function Timer()
 		Destroy();
 }
 
-simulated function HurtRadius( float DamageAmount, float DamageRadius, class<DamageType> DamageType, float Momentum, vector HitLocation )
-{
-	local actor Victims;
-	local float damageScale, dist;
-	local vector dir;
-
-	if ( bHurtEntry )
-		return;
-
-	bHurtEntry = true;
-	foreach VisibleCollidingActors( class 'Actor', Victims, DamageRadius, HitLocation )
-	{
-		if( (Victims != self) && Archvile(Victims)==None && (Victims.Role == ROLE_Authority) && !Victims.IsA('FluidSurfaceInfo') && ExtendedZCollision(Victims)==None )
-		{
-			dir = Victims.Location - HitLocation;
-			dist = FMax(1,VSize(dir));
-			dir = dir/dist;
-			damageScale = 1 - FMax(0,(dist - Victims.CollisionRadius)/DamageRadius);
-			if ( Instigator == None || Instigator.Controller == None )
-				Victims.SetDelayedDamageInstigatorController( InstigatorController );
-			Victims.TakeDamage(damageScale * DamageAmount,Instigator,Victims.Location - 0.5 * (Victims.CollisionHeight + Victims.CollisionRadius) * dir,
-				(damageScale * Momentum * dir),DamageType);
-			if (Vehicle(Victims) != None && Vehicle(Victims).Health > 0)
-				Vehicle(Victims).DriverRadiusDamage(DamageAmount, DamageRadius, InstigatorController, DamageType, Momentum, HitLocation);
-		}
-	}
-	bHurtEntry = false;
-}
 simulated function Tick( float Delta )
 {
 	if( LifeSpan<2.f )
@@ -79,6 +51,8 @@ defaultproperties
 	DamageRadius=120.000000
 	MomentumTransfer=20000.000000
 	MyDamageType=Class'ScrnDoom3KF.DamTypeArchvileFlames'
+	InstigatorClass=class'Archvile'
+	bHurtSameSpecies=false
 	LightType=LT_Steady
 	LightEffect=LE_QuadraticNonIncidence
 	LightHue=28

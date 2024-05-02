@@ -14,10 +14,11 @@ defaultproperties
 	ShakeRadius=400.0
 	ShakeScale=3.0
 
-	Speed=900.000000
-	MaxSpeed=1300.000000
-	Damage=20.000000
-	DamageRadius=180.000000
+	Speed=1050
+	MaxSpeed=1500
+	ImpactDamage=15
+	Damage=20
+	DamageRadius=180
 	MomentumTransfer=3000.000000
 	MyDamageType=Class'ScrnDoom3KF.DamTypeMancubusProj'
 	ImpactSound=Sound'2009DoomMonstersSounds.Imp.imp_exp_03'
@@ -37,6 +38,6 @@ defaultproperties
 	SoundVolume=255
 	SoundRadius=150.000000
 	TransientSoundRadius=400.000000
-	CollisionRadius=10.000000
-	CollisionHeight=10.000000
+	CollisionRadius=0
+	CollisionHeight=0
 }

@@ -27,6 +27,16 @@ function BeginPlay()
 	Super.BeginPlay();
 }
 
+function InitializeSkill(float _unused_InSkill)
+{
+	Skill = Level.Game.GameDifficulty;
+}
+
+function ResetSkill()
+{
+	bLeadTarget = Skill >= 4;
+}
+
 static function InitTeleportPoints(LevelInfo Level)
 {
 	local int i;
@@ -266,7 +276,7 @@ function rotator AdjustAim(FireProperties FiredAmmunition, vector projStart, int
  		bClean = (HitActor == None);
 		if ( !bClean )
 		{
-			FireSpot = HitLocation + vect(0,0,3);
+			FireSpot = HitLocation + vect(0,0,6);
 			bClean = FastTrace(FireSpot, ProjStart);
 		}
 		else

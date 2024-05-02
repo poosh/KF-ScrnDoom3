@@ -13,6 +13,11 @@ var Array<Sound> NewImpactSounds;
 var float ShakeRadius, ShakeScale;
 var bool bSetVelocity;
 
+var int ImpactDamage;  // additional damage on direct hits
+var class<DamageType> ImpactDamageType;
+var bool bDirectionalExplode;  // should projective velocity affect the explosion momentum?
+var class<DoomMonster> InstigatorClass;
+var bool bHurtSameSpecies;
 
 simulated function PostBeginPlay()
 {
@@ -45,6 +50,70 @@ simulated function Destroyed()
 	Super.Destroyed();
 }
 
+
+simulated function HurtVictim(Actor Victim, int DamageAmount, vector HitLocation, vector Momentum,
+		class<DamageType> DamageType)
+{
+	if (!bHurtSameSpecies && Victim.class == InstigatorClass)
+		return;
+
+	if (Instigator == None || Instigator.Controller == None) {
+		Victim.SetDelayedDamageInstigatorController(InstigatorController);
+	}
+
+	Victim.TakeDamage(DamageAmount, Instigator, HitLocation, Momentum, DamageType);
+}
+
+simulated function HurtRadius(float DamageAmount, float DamageRadius, class<DamageType> DamageType,
+		float Momentum, vector HitLocation)
+{
+	local actor Victim;
+	local float damageScale, dist;
+	local vector dir;
+
+	if ( bHurtEntry )
+		return;
+	bHurtEntry = true;
+
+	if (LastTouched != none) {
+		// the one we touched gets full damage
+		Victim = LastTouched;
+		HurtVictim(Victim, DamageAmount, HitLocation, Momentum * Normal(Victim.Location - HitLocation), DamageType);
+
+		if (Vehicle(Victim) != None && Vehicle(Victim).Health > 0)
+			Vehicle(Victim).DriverRadiusDamage(DamageAmount, DamageRadius, InstigatorController, DamageType, Momentum,
+				HitLocation);
+	}
+
+	// optimization: CollidingActors vs. VisibleCollidingActors
+	// https://wiki.beyondunreal.com/Legacy:Code_Optimization#Optimize_iterator_use
+	// In short, we do "cheap" checks first, leaving the visibility check to the end.
+	foreach CollidingActors( class 'Actor', Victim, DamageRadius, HitLocation ) {
+		if (Victim.bStatic || Victim == Hurtwall || Victim == LastTouched
+				|| Victim.Role != ROLE_Authority
+				|| Victim.IsA('FluidSurfaceInfo') || Victim.IsA('ExtendedZCollision')
+				|| !FastTrace(Victim.Location, HitLocation))
+			continue;
+
+		dir = Victim.Location - HitLocation;
+		dist = fmax(0, VSize(dir) - Victim.CollisionRadius - CollisionRadius);
+		if (dist > 1.0) {
+			dir /= dist;
+		}
+		damageScale = 1.0 - dist / DamageRadius;
+
+		HurtVictim(Victim, damageScale * DamageAmount,
+				Victim.Location - 0.5 * (Victim.CollisionHeight + Victim.CollisionRadius) * dir,
+				damageScale * Momentum * dir, DamageType);
+
+		if (Vehicle(Victim) != None && Vehicle(Victim).Health > 0)
+			Vehicle(Victim).DriverRadiusDamage(DamageAmount, DamageRadius, InstigatorController, DamageType, Momentum,
+				HitLocation);
+	}
+
+	bHurtEntry = false;
+}
+
 simulated function Explode(vector HitLocation,vector HitNormal)
 {
 	HurtRadius(Damage, DamageRadius, MyDamageType, MomentumTransfer, HitLocation);
@@ -63,10 +132,33 @@ simulated function Explode(vector HitLocation,vector HitNormal)
 	Destroy();
 }
 
-simulated function ProcessTouch (Actor Other, Vector HitLocation)
+simulated function vector GetImpactMomentum()
 {
-	if ( (Other != instigator) && (!Other.IsA('Projectile') || Other.bProjTarget) && ExtendedZCollision(Other)==None )
-		Explode(HitLocation, vect(0,0,1));
+	return MomentumTransfer * Normal(Velocity);
+}
+
+simulated function ProcessTouch(Actor Other, Vector HitLocation)
+{
+	local vector HitNormal;
+
+	if (bDeleteMe || Other == Instigator || Other.IsA('ExtendedZCollision') || Other.IsA('ROCollisionAttachment'))
+		return;
+
+	if (Role == ROLE_Authority && ImpactDamage > 0) {
+		if (ImpactDamageType == none) {
+			ImpactDamageType = MyDamageType;
+		}
+		Other.TakeDamage(ImpactDamage, Instigator, HitLocation, GetImpactMomentum(), ImpactDamageType);
+	}
+
+	if (bDirectionalExplode) {
+		HitNormal = Normal(HitLocation - Other.Location);
+	}
+	else {
+		HitNormal = vect(0, 0, 1);
+	}
+
+	Explode(HitLocation, HitNormal);
 }
 
 simulated function Landed( vector HitNormal )
@@ -118,6 +210,7 @@ static function PreCacheMaterials(LevelInfo Level)
 
 defaultproperties
 {
+	bHurtSameSpecies=true
 	TransientSoundVolume=1.0
 	ShakeScale=1.0
 }

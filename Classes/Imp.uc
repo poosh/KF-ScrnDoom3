@@ -1,9 +1,8 @@
 class Imp extends DoomMonster;
 
 var(Anims) name StandingRanged[5],JumpAttacks[3],CrouchHitAnims[4];
-var() int LungeAttackDamage;
 var() array<Material> RandSkins;
-var bool bCrawlingNow,bClientCrawling,bLunging;
+var bool bCrawlingNow,bClientCrawling;
 var transient float NextRangedTime;
 
 var(Sounds) Sound FireBallCreate,Squeals[12];
@@ -39,7 +38,7 @@ simulated function PlayDeathAnim()
 // While enemy is not in reach but still in sight.
 function bool ShouldTryRanged( Actor A )
 {
-	return (NextRangedTime<Level.TimeSeconds && FRand()<0.5f);
+	return NextRangedTime < Level.TimeSeconds && FRand() < 0.5;
 }
 
 simulated function SetCrawling( bool bCrawl )
@@ -85,14 +84,17 @@ function RangedAttack(Actor A)
 	local byte i;
 	local float D;
 
-	if ( bShotAnim )
+	if (bShotAnim)
 		return;
 
-	D = VSizeSquared(A.Location-Location);
-	if( !bHasRoamed )
+	if (!bHasRoamed) {
 		RoamAtPlayer();
-	else if( bCrawlingNow )
-	{
+		return;
+	}
+
+	D = VSizeSquared(A.Location-Location);
+
+	if( bCrawlingNow ) {
 		if( !A.IsA('KFDoorMover') && FRand()<0.2 &&  D<250000.f )
 		{
 			PrepareMovingAttack(A,0.1);
@@ -113,7 +115,7 @@ function RangedAttack(Actor A)
 		}
 		else if( NextRangedTime<Level.TimeSeconds )
 		{
-			if( D<6250000.f )
+			if( D < 1000000.f )
 			{
 				PrepareMovingAttack(A,0.3);
 				SetAnimAction(StandingRanged[0]);
@@ -126,17 +128,26 @@ function RangedAttack(Actor A)
 		PrepareMovingAttack(A,0.25);
 		SetAnimAction(MeleeAnims[Rand(ArrayCount(MeleeAnims))]);
 	}
-	else if( NextRangedTime<Level.TimeSeconds || D<390000.f )
-	{
-		if( D<6250000.f )
-		{
+	else if (NextRangedTime < Level.TimeSeconds) {
+		if (D < 1000000.f) {
 			i = Rand(4)+1;
-			if( i==1 || i==2 )
-				PrepareMovingAttack(A,0.6);
-			else PrepareStillAttack(A);
+			if( i==1 || i==2 ) {
+				PrepareMovingAttack(A, 0.6);
+			}
+			else {
+				PrepareStillAttack(A);
+			}
 			SetAnimAction(StandingRanged[i]);
+			if (D < 360000.f) {
+				NextRangedTime = Level.TimeSeconds + 0.5 + 1.5*frand();
+			}
+			else {
+				NextRangedTime = Level.TimeSeconds + 2.0 + 3.0*frand();
+			}
 		}
-		NextRangedTime = Level.TimeSeconds+2.f+FRand()*3.f;
+		else {
+			NextRangedTime = Level.TimeSeconds + 1.0 + 1.0*frand();
+		}
 	}
 }
 
@@ -165,6 +176,7 @@ simulated function AnimEnd(int Channel)
 	}
 	Super.AnimEnd(Channel);
 }
+
 singular function Bump(actor Other)
 {
 	if( Level.NetMode!=NM_Client && bLunging && Controller!=None && Other==Controller.Target )
@@ -174,6 +186,7 @@ singular function Bump(actor Other)
 	}
 	Super.Bump(Other);
 }
+
 simulated function SetAnimAction(name NewAction)
 {
 	if( NewAction==JumpAttacks[0] || NewAction==JumpAttacks[1] || NewAction==JumpAttacks[2] )

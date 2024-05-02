@@ -207,7 +207,7 @@ Begin:
 
 defaultproperties
 {
-	FlyDmgMult=3.0
+	FlyDmgMult=2.0
 	FlySpeed=1000
 	bFlying=true
 	bCollideActors=false

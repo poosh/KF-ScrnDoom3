@@ -2,7 +2,7 @@ class Mancubus extends DoomMonster;
 
 var transient float NextRangedTime;
 var(Sounds) Sound ProjFireSounds[2];
-var byte MultiFires;
+var int MultiFires;
 
 simulated function PostBeginPlay()
 {
@@ -17,26 +17,32 @@ simulated function PostBeginPlay()
 
 function RangedAttack(Actor A)
 {
-	if ( bShotAnim )
+	local float HealthPct;
+
+	if (bShotAnim)
 		return;
 
-	if( !bHasRoamed )
+	if (!bHasRoamed) {
 		RoamAtPlayer();
-	else if( IsInMeleeRange(A) && (MaxMeleeAttacks > 0 || NextRangedTime >= Level.TimeSeconds) )
-	{
+		return;
+	}
+
+	HealthPct = Health / HealthMax;
+
+	if (IsInMeleeRange(A) && (MaxMeleeAttacks > 0 || NextRangedTime >= Level.TimeSeconds)) {
 		MaxMeleeAttacks--;
 		PrepareStillAttack(A);
 		SetAnimAction('Attack1');
 	}
-	else if( NextRangedTime<Level.TimeSeconds )
-	{
+	else if (NextRangedTime < Level.TimeSeconds) {
 		if (MaxMeleeAttacks <= 0)
 			MaxMeleeAttacks = 1 + rand(default.MaxMeleeAttacks+1);
 
-		if( MultiFires==0 )
-			MultiFires = 1+Rand(2);
-		else if( --MultiFires==0 )
-			NextRangedTime = Level.TimeSeconds+3.f+FRand()*6.f;
+		if (--MultiFires <=0 ) {
+			// extra random multifire per 25% hp loss
+			MultiFires = 1 + rand(5.9 - 4.0*HealthPct);
+			NextRangedTime = Level.TimeSeconds + 1.0 + 5.0*HealthPct + (2.0 + 2.0*HealthPct)*frand();
+		}
 		PrepareStillAttack(A);
 		SetAnimAction('MultiFire');
 	}
@@ -45,7 +51,15 @@ function RangedAttack(Actor A)
 // While enemy is not in reach but still in sight.
 function bool ShouldTryRanged( Actor A )
 {
-	return (NextRangedTime<Level.TimeSeconds && FRand()<0.7f);
+	return NextRangedTime < Level.TimeSeconds && frand() < 0.7;
+}
+
+function TakeDamage(int Damage, Pawn instigatedBy, Vector hitlocation, Vector momentum, class<DamageType> DamType,
+		optional int HitIndex)
+{
+	super.TakeDamage(Damage, InstigatedBy, Hitlocation, Momentum, DamType, HitIndex);
+	// Adjust NextRangedTime to the new HealthPct. The formula is from RangedAttack(), using the max frand value (1.0)
+	NextRangedTime = fmin(NextRangedTime, Level.TimeSeconds + 3.0 + 7.0*Health/HealthMax);
 }
 
 simulated function FireProjectile()
@@ -94,125 +108,125 @@ simulated function BurnAway()
 
 defaultproperties
 {
-     ProjFireSounds(0)=Sound'2009DoomMonstersSounds.Mancubus.Mancubus_ft_03'
-     ProjFireSounds(1)=Sound'2009DoomMonstersSounds.Mancubus.Mancubus_ft_01'
-     DeathAnims(0)="DeathF"
-     DeathAnims(1)="DeathB"
-     DeathAnims(2)="DeathF"
-     DeathAnims(3)="DeathB"
-     SightAnim="Sight"
-     HitAnimsX(0)="Pain_L"
-     HitAnimsX(1)="Pain_Head"
-     HitAnimsX(2)="Pain_R"
-     HitAnimsX(3)="Pain_Chest"
-     MeleeAttackSounds(0)=Sound'2009DoomMonstersSounds.Mancubus.Mancubus_chatter_combat2'
-     MeleeAttackSounds(1)=Sound'2009DoomMonstersSounds.Mancubus.Mancubus_chatter_combat2'
-     MeleeAttackSounds(2)=Sound'2009DoomMonstersSounds.Mancubus.Mancubus_chatter_combat2'
-     MeleeAttackSounds(3)=Sound'2009DoomMonstersSounds.Mancubus.Mancubus_chatter_combat2'
-     SightSound=Sound'2009DoomMonstersSounds.Mancubus.Mancubus_sight1'
-     BurnClass=Class'ScrnDoom3KF.MancubusBurnTex'
-     FootstepSndRadius=800.000000
-     RangedProjectile=Class'ScrnDoom3KF.MancubusProjectile'
-     HasHitAnims=True
-     BigMonster=True
-     aimerror=200
-     BurnAnimTime=0.200000
-     MeleeDamage=50
-     bFatAss=True
-     bUseExtendedCollision=True
-     ColOffset=(Z=38.000000)
-     ColRadius=60.000000
-     ColHeight=45.000000
-     PlayerCountHealthScale=0.100000
-     FootStep(0)=Sound'2009DoomMonstersSounds.Mancubus.Mancubus_step5'
-     FootStep(1)=Sound'2009DoomMonstersSounds.Mancubus.Mancubus_step5'
-     HitSound(0)=Sound'2009DoomMonstersSounds.Mancubus.Mancubus_pain5'
-     HitSound(1)=Sound'2009DoomMonstersSounds.Mancubus.Mancubus_pain6'
-     HitSound(2)=Sound'2009DoomMonstersSounds.Mancubus.Mancubus_pain5'
-     HitSound(3)=Sound'2009DoomMonstersSounds.Mancubus.Mancubus_pain6'
-     DeathSound(0)=Sound'2009DoomMonstersSounds.Mancubus.Mancubus_die3'
-     DeathSound(1)=Sound'2009DoomMonstersSounds.Mancubus.Mancubus_die1'
-     DeathSound(2)=Sound'2009DoomMonstersSounds.Mancubus.Mancubus_die3'
-     DeathSound(3)=Sound'2009DoomMonstersSounds.Mancubus.Mancubus_die1'
-     ChallengeSound(0)=Sound'2009DoomMonstersSounds.Mancubus.Mancubus_Chatter1'
-     ChallengeSound(1)=Sound'2009DoomMonstersSounds.Mancubus.Mancubus_chatter2'
-     ChallengeSound(2)=Sound'2009DoomMonstersSounds.Mancubus.Mancubus_sight2'
-     ChallengeSound(3)=Sound'2009DoomMonstersSounds.Mancubus.Mancubus_sight3'
-     ScoringValue=180
-     WallDodgeAnims(0)="Walk"
-     WallDodgeAnims(1)="Walk"
-     WallDodgeAnims(2)="Walk"
-     WallDodgeAnims(3)="Walk"
-     IdleHeavyAnim="Idle"
-     IdleRifleAnim="Idle"
-     FireHeavyRapidAnim="Walk"
-     FireHeavyBurstAnim="Walk"
-     FireRifleRapidAnim="Walk"
-     FireRifleBurstAnim="Walk"
-     RagdollOverride="D3Mancubus"
-     bCanJump=False
-     MeleeRange=130.000000
-     GroundSpeed=85.000000
-     HealthMax=1600.000000
-     Health=1600
-     HeadRadius=20
-     MenuName="Mancubus"
-     MovementAnims(0)="Walk"
-     MovementAnims(1)="Walk"
-     MovementAnims(2)="Walk"
-     MovementAnims(3)="Walk"
-     TurnLeftAnim="Walk"
-     TurnRightAnim="Walk"
-     SwimAnims(0)="Walk"
-     SwimAnims(1)="Walk"
-     SwimAnims(2)="Walk"
-     SwimAnims(3)="Walk"
-     CrouchAnims(0)="Walk"
-     CrouchAnims(1)="Walk"
-     CrouchAnims(2)="Walk"
-     CrouchAnims(3)="Walk"
-     WalkAnims(0)="Walk"
-     WalkAnims(1)="Walk"
-     WalkAnims(2)="Walk"
-     WalkAnims(3)="Walk"
-     AirAnims(0)="Walk"
-     AirAnims(1)="Walk"
-     AirAnims(2)="Walk"
-     AirAnims(3)="Walk"
-     TakeoffAnims(0)="Walk"
-     TakeoffAnims(1)="Walk"
-     TakeoffAnims(2)="Walk"
-     TakeoffAnims(3)="Walk"
-     LandAnims(0)="Walk"
-     LandAnims(1)="Walk"
-     LandAnims(2)="Walk"
-     LandAnims(3)="Walk"
-     DoubleJumpAnims(0)="Walk"
-     DoubleJumpAnims(1)="Walk"
-     DoubleJumpAnims(2)="Walk"
-     DoubleJumpAnims(3)="Walk"
-     DodgeAnims(0)="Walk"
-     DodgeAnims(1)="Walk"
-     DodgeAnims(2)="Walk"
-     DodgeAnims(3)="Walk"
-     AirStillAnim="Walk"
-     TakeoffStillAnim="Walk"
-     CrouchTurnRightAnim="Walk"
-     CrouchTurnLeftAnim="Walk"
-     IdleCrouchAnim="Idle"
-     IdleSwimAnim="Idle"
-     IdleWeaponAnim="Idle"
-     IdleRestAnim="Idle"
-     IdleChatAnim="Idle"
-     Mesh=SkeletalMesh'2009DoomMonstersAnims.MancubusMesh'
-     DrawScale=1.200000
-     Skins(0)=Combiner'2009DoomMonstersTex.Mancubus.JMancubusSkin'
-     Skins(1)=Combiner'2009DoomMonstersTex.Mancubus.JMancubusSkin'
-     Skins(2)=Shader'2009DoomMonstersTex.Mancubus.MancubusPipeShader'
-     Skins(3)=Texture'2009DoomMonstersTex.Mancubus.MancubusPipe'
-     CollisionRadius=26 // 30
-     CollisionHeight=44 //48
-     Mass=5000.000000
-	 MaxMeleeAttacks=5
-     ZapThreshold=1.750000
+	ProjFireSounds(0)=Sound'2009DoomMonstersSounds.Mancubus.Mancubus_ft_03'
+	ProjFireSounds(1)=Sound'2009DoomMonstersSounds.Mancubus.Mancubus_ft_01'
+	DeathAnims(0)="DeathF"
+	DeathAnims(1)="DeathB"
+	DeathAnims(2)="DeathF"
+	DeathAnims(3)="DeathB"
+	SightAnim="Sight"
+	HitAnimsX(0)="Pain_L"
+	HitAnimsX(1)="Pain_Head"
+	HitAnimsX(2)="Pain_R"
+	HitAnimsX(3)="Pain_Chest"
+	MeleeAttackSounds(0)=Sound'2009DoomMonstersSounds.Mancubus.Mancubus_chatter_combat2'
+	MeleeAttackSounds(1)=Sound'2009DoomMonstersSounds.Mancubus.Mancubus_chatter_combat2'
+	MeleeAttackSounds(2)=Sound'2009DoomMonstersSounds.Mancubus.Mancubus_chatter_combat2'
+	MeleeAttackSounds(3)=Sound'2009DoomMonstersSounds.Mancubus.Mancubus_chatter_combat2'
+	SightSound=Sound'2009DoomMonstersSounds.Mancubus.Mancubus_sight1'
+	BurnClass=Class'ScrnDoom3KF.MancubusBurnTex'
+	FootstepSndRadius=800.000000
+	RangedProjectile=Class'ScrnDoom3KF.MancubusProjectile'
+	HasHitAnims=True
+	BigMonster=True
+	aimerror=200
+	BurnAnimTime=0.200000
+	MeleeDamage=50
+	bFatAss=True
+	bUseExtendedCollision=True
+	ColOffset=(Z=38.000000)
+	ColRadius=60.000000
+	ColHeight=45.000000
+	PlayerCountHealthScale=0.100000
+	FootStep(0)=Sound'2009DoomMonstersSounds.Mancubus.Mancubus_step5'
+	FootStep(1)=Sound'2009DoomMonstersSounds.Mancubus.Mancubus_step5'
+	HitSound(0)=Sound'2009DoomMonstersSounds.Mancubus.Mancubus_pain5'
+	HitSound(1)=Sound'2009DoomMonstersSounds.Mancubus.Mancubus_pain6'
+	HitSound(2)=Sound'2009DoomMonstersSounds.Mancubus.Mancubus_pain5'
+	HitSound(3)=Sound'2009DoomMonstersSounds.Mancubus.Mancubus_pain6'
+	DeathSound(0)=Sound'2009DoomMonstersSounds.Mancubus.Mancubus_die3'
+	DeathSound(1)=Sound'2009DoomMonstersSounds.Mancubus.Mancubus_die1'
+	DeathSound(2)=Sound'2009DoomMonstersSounds.Mancubus.Mancubus_die3'
+	DeathSound(3)=Sound'2009DoomMonstersSounds.Mancubus.Mancubus_die1'
+	ChallengeSound(0)=Sound'2009DoomMonstersSounds.Mancubus.Mancubus_Chatter1'
+	ChallengeSound(1)=Sound'2009DoomMonstersSounds.Mancubus.Mancubus_chatter2'
+	ChallengeSound(2)=Sound'2009DoomMonstersSounds.Mancubus.Mancubus_sight2'
+	ChallengeSound(3)=Sound'2009DoomMonstersSounds.Mancubus.Mancubus_sight3'
+	ScoringValue=180
+	WallDodgeAnims(0)="Walk"
+	WallDodgeAnims(1)="Walk"
+	WallDodgeAnims(2)="Walk"
+	WallDodgeAnims(3)="Walk"
+	IdleHeavyAnim="Idle"
+	IdleRifleAnim="Idle"
+	FireHeavyRapidAnim="Walk"
+	FireHeavyBurstAnim="Walk"
+	FireRifleRapidAnim="Walk"
+	FireRifleBurstAnim="Walk"
+	RagdollOverride="D3Mancubus"
+	bCanJump=False
+	MeleeRange=130.000000
+	GroundSpeed=85.000000
+	HealthMax=1600.000000
+	Health=1600
+	HeadRadius=20
+	MenuName="Mancubus"
+	MovementAnims(0)="Walk"
+	MovementAnims(1)="Walk"
+	MovementAnims(2)="Walk"
+	MovementAnims(3)="Walk"
+	TurnLeftAnim="Walk"
+	TurnRightAnim="Walk"
+	SwimAnims(0)="Walk"
+	SwimAnims(1)="Walk"
+	SwimAnims(2)="Walk"
+	SwimAnims(3)="Walk"
+	CrouchAnims(0)="Walk"
+	CrouchAnims(1)="Walk"
+	CrouchAnims(2)="Walk"
+	CrouchAnims(3)="Walk"
+	WalkAnims(0)="Walk"
+	WalkAnims(1)="Walk"
+	WalkAnims(2)="Walk"
+	WalkAnims(3)="Walk"
+	AirAnims(0)="Walk"
+	AirAnims(1)="Walk"
+	AirAnims(2)="Walk"
+	AirAnims(3)="Walk"
+	TakeoffAnims(0)="Walk"
+	TakeoffAnims(1)="Walk"
+	TakeoffAnims(2)="Walk"
+	TakeoffAnims(3)="Walk"
+	LandAnims(0)="Walk"
+	LandAnims(1)="Walk"
+	LandAnims(2)="Walk"
+	LandAnims(3)="Walk"
+	DoubleJumpAnims(0)="Walk"
+	DoubleJumpAnims(1)="Walk"
+	DoubleJumpAnims(2)="Walk"
+	DoubleJumpAnims(3)="Walk"
+	DodgeAnims(0)="Walk"
+	DodgeAnims(1)="Walk"
+	DodgeAnims(2)="Walk"
+	DodgeAnims(3)="Walk"
+	AirStillAnim="Walk"
+	TakeoffStillAnim="Walk"
+	CrouchTurnRightAnim="Walk"
+	CrouchTurnLeftAnim="Walk"
+	IdleCrouchAnim="Idle"
+	IdleSwimAnim="Idle"
+	IdleWeaponAnim="Idle"
+	IdleRestAnim="Idle"
+	IdleChatAnim="Idle"
+	Mesh=SkeletalMesh'2009DoomMonstersAnims.MancubusMesh'
+	DrawScale=1.200000
+	Skins(0)=Combiner'2009DoomMonstersTex.Mancubus.JMancubusSkin'
+	Skins(1)=Combiner'2009DoomMonstersTex.Mancubus.JMancubusSkin'
+	Skins(2)=Shader'2009DoomMonstersTex.Mancubus.MancubusPipeShader'
+	Skins(3)=Texture'2009DoomMonstersTex.Mancubus.MancubusPipe'
+	CollisionRadius=26 // 30
+	CollisionHeight=44 //48
+	Mass=5000.000000
+	MaxMeleeAttacks=5
+	ZapThreshold=1.750000
 }

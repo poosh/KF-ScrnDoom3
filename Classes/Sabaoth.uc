@@ -61,6 +61,13 @@ function bool ShouldTryRanged( Actor A )
 	return (NextProjTime<Level.TimeSeconds && FRand()<0.7f);
 }
 
+function InitFireProperties()
+{
+	super.InitFireProperties();
+	// shooting BFG at player feet would be too harsh
+	SavedFireProperties.bTrySplash = false;
+}
+
 simulated function FireProjectile()
 {
 	if ( Level.NetMode!=NM_Client && Controller!=None )

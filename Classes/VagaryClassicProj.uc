@@ -79,12 +79,6 @@ simulated function Destroyed()
 	Super.Destroyed();
 }
 
-function ProcessTouch(Actor Other, Vector HitLocation)
-{
-	if ( Other != Instigator && ExtendedZCollision(Other)==None )
-		Explode(HitLocation,Normal(HitLocation-Other.Location));
-}
-
 function HitWall(vector HitNormal, actor Wall)
 {
 	if ( !Wall.bStatic && !Wall.bWorldGeometry )
@@ -119,7 +113,8 @@ defaultproperties
 	NewSkins(2)=Texture'2009DoomMonstersTex.Vagary.VagSpikeTex2'
 	Speed=1000.000000
 	MaxSpeed=1500.000000
-	Damage=38.000000
+	bDirectionalExplode=true
+	Damage=38
 	DamageRadius=120.000000
 	MomentumTransfer=3000.000000
 	MyDamageType=Class'ScrnDoom3KF.DamTypeVagaryClassicProj'

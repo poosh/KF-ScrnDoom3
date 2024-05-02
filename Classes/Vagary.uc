@@ -9,26 +9,34 @@ var name SpiderAttachBone;
 var class<TriteFly> MonsterProjClass; //  monster class, which is used as projectile to throw at the enemy
 var transient TriteFly SpiderProj;
 var float SpiderThrowTime; //time when vagary should release spider from her arm and throw it at player
-var byte PendingSpiders, PendingRocks;
-
+var transient int PendingSpiders, PendingRocks;
+var int MaxSpiders;
 
 function RangedAttack(Actor A)
 {
-	local float h, r;
+	local float h, s;
 	local bool bCanSpider;
 
 	if ( bShotAnim )
 		return;
 
-	bCanSpider = IsInSpiderRange(A);
+	if (!bHasRoamed) {
+		RoamAtPlayer();
+		return;
+	}
+
+	bCanSpider = ChildMonsterCounter < MaxSpiders && IsInSpiderRange(A);
+	if (!bCanSpider) {
+		PendingSpiders = 0;
+	}
 	h = float(Health) / HealthMax;
-	r = frand();
-	if ( bCanSpider && PendingSpiders > 0 ) {
+	s = float(ChildMonsterCounter) / MaxSpiders;
+
+	if (PendingSpiders > 0) {
 		PrepareStillAttack(A);
 		SetAnimAction('RangedAttack2');
 		SpawnSpider(A);
 		PendingSpiders--;
-		NextRangedTime = Level.TimeSeconds + 1.0 + 3.0*h + r * (1.5 + 1.5*h);
 		PlaySound(PreFireSound,SLOT_Misc,2,,500.f);
 
 		if ( SpiderProj == none ) {
@@ -36,59 +44,56 @@ function RangedAttack(Actor A)
 			SpawnProject(A);
 		}
 	}
-	else if ( PendingRocks > 0 ) {
+	else if (PendingRocks > 0) {
 		PrepareStillAttack(A);
-		if (r < 0.5) {
+		if (frand() < 0.5) {
 			SetAnimAction('RangedAttack1');
 		}
 		else {
 			SetAnimAction('RangedAttack2');
 		}
 		PendingRocks--;
-		NextRangedTime = Level.TimeSeconds + 2.0 + 3.0*h + r * (2.5 + 2.5*h);
 		PlaySound(PreFireSound,SLOT_Misc,2,,500.f);
 		SpawnProject(A);
 	}
-	else if( !bHasRoamed ) {
-		RoamAtPlayer();
-	}
-	else if( IsInMeleeRange(A) && (MaxMeleeAttacks > 0 || NextRangedTime >= Level.TimeSeconds) ) {
+	else if (IsInMeleeRange(A) && (MaxMeleeAttacks > 0 || NextRangedTime >= Level.TimeSeconds)) {
 		MaxMeleeAttacks--;
 
 		PrepareStillAttack(A);
 		SetAnimAction('Melee1');
 	}
-	else if( NextRangedTime<Level.TimeSeconds )
-	{
+	else if (NextRangedTime < Level.TimeSeconds || MaxMeleeAttacks <= 0) {
 		if ( MaxMeleeAttacks <= 0)
 			MaxMeleeAttacks = rand(default.MaxMeleeAttacks+1);
 
 		PrepareStillAttack(A);
 
-		if ( bCanSpider && r < 0.75 - 0.05*ChildMonsterCounter ) {
-			if ( h < 0.75 ) {
-				PendingSpiders = min(5, rand(10 * (1.0 - h)));
+		if (bCanSpider && frand() < fmax(0.30, 0.80 - 0.07*ChildMonsterCounter)) {
+			if (h < 0.75 && s < 0.75) {
+				PendingSpiders = min(4, rand(8 * (1.0 - h - s)));
 			}
 			SetAnimAction('RangedAttack2');
 			SpawnSpider(A);
 		}
 		else {
-			if( r > 0.80 ) {
+			// spawn rock projectile
+			if(frand() < 0.50) {
 				SetAnimAction('RangedAttack2');
 			}
 			else {
 				SetAnimAction('RangedAttack1');
 			}
-			if ( h < 0.50 ) {
-				PendingRocks = rand(min(1.0 / h, 5));
+			if (h < 0.50) {
+				PendingRocks = rand(min(1.0 / h, 4));
 			}
 		}
-		NextRangedTime = Level.TimeSeconds + 0.5 + 2.0*h + frand() * ( 1.5 + 1.5*h);
+
 		PlaySound(PreFireSound,SLOT_Misc,2,,500.f);
 		if ( SpiderProj == none ) {
 			PendingSpiders = 0;
 			SpawnProject(A);
 		}
+		NextRangedTime = Level.TimeSeconds + 1.0 + 2.0*h + 2.0*PendingSpiders + 2.0*PendingRocks + (1.5 + 1.5*h)*frand();
 	}
 }
 
@@ -113,7 +118,7 @@ function SpawnSpider( Actor A )
 	local vector NDir,Point,HL,HN;
 	local byte i;
 
-	if ( SpiderProj != none || ChildMonsterCounter >= 16 )
+	if (SpiderProj != none || ChildMonsterCounter >= MaxSpiders)
 		return;
 
 	// try to spawn inside the arm first
@@ -261,6 +266,7 @@ simulated function BurnAway()
 
 defaultproperties
 {
+	MaxSpiders=16
 	ChildrenMonsters(0)=Class'ScrnDoom3KF.TriteFly'
 	ChildrenMonsters(1)=Class'ScrnDoom3KF.Trite'  // for precaching
 	SpiderAttachBone="Lmid1"
@@ -385,7 +391,7 @@ defaultproperties
 	CollisionHeight=44 // 50
 	Mass=1000.000000
 	MonsterProjClass=Class'ScrnDoom3KF.TriteFly'
-	MaxMeleeAttacks=2
+	MaxMeleeAttacks=4
 
 	FireRootBone="BabySpine1"
 	ZapThreshold=5

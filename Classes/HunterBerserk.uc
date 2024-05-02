@@ -1,12 +1,11 @@
  class HunterBerserk extends DoomBoss;
 
-var() int LungeAttackDamage;
 var transient float NextRangedAttackTime,NextChestOpenTime,NextRageTime;
 var HunterChargeEffect ChargeEffect;
 var HunterMainEffect BodyEffect;
 var Sound ChestRipSound[3];
 var Sound PreFireSound;
-var bool bIsRageMode,bClientRageAnim,bLunging;
+var bool bIsRageMode,bClientRageAnim;
 var HunterBerserkEffect ChargingFX;
 var transient float ChestOpenedUntil;
 
@@ -382,7 +381,7 @@ function bool IsHeadShot(vector loc, vector ray, float AdditionalScale)
 
 defaultproperties
 {
-	 LungeAttackDamage=27
+	 LungeAttackDamage=35
 	 ChestRipSound(0)=Sound'2009DoomMonstersSounds.Hunter.Hunter_chestrip_01'
 	 ChestRipSound(1)=Sound'2009DoomMonstersSounds.Hunter.Hunter_chestrip_03'
 	 ChestRipSound(2)=Sound'2009DoomMonstersSounds.Hunter.Hunter_chestrip_04'
@@ -411,7 +410,7 @@ defaultproperties
 	 BurnAnimTime=0.250000
 	 MeleeAnims(0)="Attack1"
 	 MeleeAnims(1)="Attack3"
-	 MeleeDamage=15
+	 MeleeDamage=23
 	 bFatAss=True
 	 FootStep(0)=Sound'2009DoomMonstersSounds.HellKnight.HellKnight_step1'
 	 FootStep(1)=Sound'2009DoomMonstersSounds.HellKnight.HellKnight_step1'

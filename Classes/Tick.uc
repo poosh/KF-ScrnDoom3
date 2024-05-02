@@ -1,8 +1,6 @@
 class Tick extends DoomMonster;
 
-var bool bLunging;
 var transient float NextLungeTime;
-var() byte LungeAttackDamage;
 
 simulated function PostBeginPlay()
 {
@@ -20,21 +18,23 @@ function RangedAttack(Actor A)
 
 	if( !bHasRoamed )
 		RoamAtPlayer();
-	else if( IsInMeleeRange(A) )
-	{
+	else if( IsInMeleeRange(A) ) {
 		PrepareStillAttack(A);
 		SetAnimAction(MeleeAnims[Rand(2)]);
 	}
-	else if( NextLungeTime<Level.TimeSeconds && IsInMeleeRange(A,120.f) )
+	else if( NextLungeTime<Level.TimeSeconds && IsInMeleeRange(A, 200.0) )
 	{
-		NextLungeTime = Level.TimeSeconds+2.f+FRand()*2.f;
-		if( FRand()<0.5f )
-			return;
-		PrepareStillAttack(A);
-		SetAnimAction('Jump_Start');
-		Controller.Focus = None;
-		Controller.FocalPoint = Normal(A.Location-Location)*10000.f+Location;
-		Controller.GoToState('WaitForAnim');
+		if (frand() < 0.7) {
+			PrepareStillAttack(A);
+			SetAnimAction('Jump_Start');
+			Controller.Focus = None;
+			Controller.FocalPoint = Normal(A.Location-Location)*10000.f+Location;
+			Controller.GoToState('WaitForAnim');
+			NextLungeTime = Level.TimeSeconds + 2.0 + frand()*2.f;
+		}
+		else {
+			NextLungeTime = Level.TimeSeconds + 0.5 + 1.0*frand();
+		}
 	}
 }
 
@@ -103,7 +103,7 @@ simulated function ZombieCrispUp()
 
 defaultproperties
 {
-	LungeAttackDamage=15
+	LungeAttackDamage=12
 	DeathAnims(0)="DeathF"
 	DeathAnims(1)="DeathB"
 	DeathAnims(2)="DeathF"
@@ -121,7 +121,7 @@ defaultproperties
 	HasHitAnims=True
 	MeleeAnims(0)="Attack1"
 	MeleeAnims(1)="Attack2"
-	MeleeDamage=10
+	MeleeDamage=8
 	FootStep(0)=Sound'2009DoomMonstersSounds.Tick.tick_walk1'
 	FootStep(1)=Sound'2009DoomMonstersSounds.Tick.tick_walk2'
 	DodgeSkillAdjust=4.000000

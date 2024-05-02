@@ -9,13 +9,14 @@ var float ChargeTime;
 
 var transient int PlayerHits; //how many times arcs hit players
 var transient bool bDestoyedByHuman;
+var transient float FullChargeTime;
 
 simulated function PostBeginPlay()
 {
 	Super.PostBeginPlay();
 
-	ChargeTime = Level.TimeSeconds + default.ChargeTime;
-	SetTimer(1.0, false);
+	FullChargeTime = Level.TimeSeconds + ChargeTime;
+	SetTimer(ChargeTime, false);
 }
 
 simulated function Timer()
@@ -23,32 +24,36 @@ simulated function Timer()
 	local Actor A;
 	local byte ArcCounter;
 	local SabaothProjArc Arc;
+	local int d;
 
 	if (bDeleteMe)
 		return;
 
 	if( NormalDir==vect(0,0,0) )
 		NormalDir = Normal(Velocity);
+	d = Damage*0.1;
 
-	foreach VisibleCollidingActors(class'Actor', A, 600)
-	{
-		if( !A.bStatic && A.Class!=Class && A!=Instigator && (A.bProjTarget || A.bBlockActors) && ((NormalDir Dot Normal(A.Location-Location))>0.45f) )
-		{
-			if( Level.NetMode!=NM_DedicatedServer )
-			{
-				Arc = Spawn(GreenArcs[Rand(2)],Self);
-				Arc.mSpawnVecA = A.Location;
-				Arc.Target = A;
-				Arc.AmbientSound = ArcSounds[Rand(3)];
-			}
-			if( A.Role==ROLE_Authority ) {
-				A.TakeDamage(Damage*0.1,Instigator,Location,1000.f * vRand(),MyDamageType);
-				if ( KFPawn(A) != none )
-					PlayerHits++;
-			}
-			if( ++ArcCounter>=6 )
-				break;
+	// optimization: CollidingActors vs. VisibleCollidingActors
+	// https://wiki.beyondunreal.com/Legacy:Code_Optimization#Optimize_iterator_use
+	// In short, we do "cheap" checks first, leaving the visibility check to the end.
+	foreach CollidingActors(class'Actor', A, 600) {
+		if (A.bStatic || A == Instigator || A.class == self.class || (!A.bProjTarget && !A.bBlockActors)
+				|| (NormalDir Dot Normal(A.Location-Location)) < 0.45
+				|| !FastTrace(A.Location, Location))
+			continue; // skip this actor
+
+		if (Level.NetMode!=NM_DedicatedServer) {
+			Arc = Spawn(GreenArcs[Rand(2)],Self);
+			Arc.mSpawnVecA = A.Location;
+			Arc.Target = A;
+			Arc.AmbientSound = ArcSounds[Rand(3)];
 		}
+		if (A.IsA('KFPawn')) {
+			++PlayerHits;
+		}
+		A.TakeDamage(d, Instigator, Location, 1000.0 * vRand(), MyDamageType);
+		if( ++ArcCounter>=6 )
+			break;
 	}
 	SetTimer(0.1, false);
 }
@@ -59,8 +64,8 @@ simulated function Explode(vector HitLocation,vector HitNormal)
 		return;
 	bHadDeathFX = true;
 
-	if ( Level.TimeSeconds < ChargeTime ) {
-		Damage *= fmax(0.2, 1.0 - ((ChargeTime - Level.TimeSeconds) / default.ChargeTime));
+	if ( Level.TimeSeconds < FullChargeTime ) {
+		Damage *= fmax(0.2, 1.0 - ((FullChargeTime - Level.TimeSeconds) / ChargeTime));
 	}
 	super.Explode(HitLocation, HitNormal);
 }
@@ -70,12 +75,6 @@ simulated function Destroyed()
 	if( !bHadDeathFX && Level.NetMode==NM_Client )
 		Explode(Location,Normal(-Velocity));
 	Super.Destroyed();
-}
-
-function ProcessTouch(Actor Other, Vector HitLocation)
-{
-	if ( Other!=Instigator && ExtendedZCollision(Other)==None )
-		Explode(HitLocation,Normal(HitLocation-Other.Location));
 }
 
 function HitWall(vector HitNormal, actor Wall)
@@ -106,85 +105,23 @@ function TakeDamage(int Damage, Pawn InstigatedBy, vector HitLocation, vector Mo
 	Health -= Damage;
 	if( Health <= 0 ) {
 		bDestoyedByHuman = KFPawn(InstigatedBy) != none;
-		DamageRadius = 100.f;
-		Explode(Location,Normal(Location-HitLocation));
+		Explode(Location, Normal(Location-HitLocation));
 		// this added for achievement track - destory BFG cell before it hurts anyone
 		if ( PlayerHits == 0 ) {
-			Instigator.TakeDamage(666, InstigatedBy, Instigator.Location, vect(0,0,0), class'DamTypeBFG' );
+			Instigator.TakeDamage(666, InstigatedBy, Instigator.Location, vect(0,0,1), class'DamTypeBFG');
 		}
 	}
 }
 
-// copy-pasted from Projectile to add bDamagedPlayer
-simulated function HurtRadius( float DamageAmount, float DamageRadius, class<DamageType> DamageType, float Momentum, vector HitLocation )
+simulated function HurtVictim(Actor Victim, int DamageAmount, vector HitLocation, vector Momentum,
+		class<DamageType> DamageType)
 {
-	local actor Victims;
-	local float damageScale, dist;
-	local vector dir;
-
-	if ( bHurtEntry )
-		return;
-
-	bHurtEntry = true;
-	foreach VisibleCollidingActors( class 'Actor', Victims, DamageRadius, HitLocation )
-	{
-		// don't let blast damage affect fluid - VisibleCollisingActors doesn't really work for them - jag
-		if( (bDestoyedByHuman || Victims != self) && (Hurtwall != Victims) && (Victims.Role == ROLE_Authority) && !Victims.IsA('FluidSurfaceInfo') )
-		{
-			dir = Victims.Location - HitLocation;
-			dist = FMax(1,VSize(dir));
-			dir = dir/dist;
-			damageScale = 1 - FMax(0,(dist - Victims.CollisionRadius)/DamageRadius);
-			if ( Instigator == None || Instigator.Controller == None )
-				Victims.SetDelayedDamageInstigatorController( InstigatorController );
-			if ( Victims == LastTouched )
-				LastTouched = None;
-			if ( bDestoyedByHuman ) {
-				if ( Monster(Victims) != none )
-					damageScale *= 20; //do huge amount of damage to monsters if BFG cell is destoryed by human
-				else if ( KFPawn(Victims) != none && dist > DamageRadius*0.5 )
-					continue; // twice smaller damage radius to humans if they destroyed BFG cell in mid-air
-			}
-			if ( KFPawn(Victims) != none )
-				PlayerHits += 10;
-			Victims.TakeDamage
-			(
-				damageScale * DamageAmount,
-				Instigator,
-				Victims.Location - 0.5 * (Victims.CollisionHeight + Victims.CollisionRadius) * dir,
-				(damageScale * Momentum * dir),
-				DamageType
-			);
-			if (Vehicle(Victims) != None && Vehicle(Victims).Health > 0)
-				Vehicle(Victims).DriverRadiusDamage(DamageAmount, DamageRadius, InstigatorController, DamageType, Momentum, HitLocation);
-
-		}
+	if (Victim.IsA('KFPawn')) {
+		if (bDestoyedByHuman)
+			return;  // no damage to players if they destroyed the BFG cell in mid-air
+		PlayerHits += 10;
 	}
-	if ( (LastTouched != None) && (LastTouched != self) && (LastTouched.Role == ROLE_Authority) && !LastTouched.IsA('FluidSurfaceInfo') )
-	{
-		Victims = LastTouched;
-		LastTouched = None;
-		dir = Victims.Location - HitLocation;
-		dist = FMax(1,VSize(dir));
-		dir = dir/dist;
-		damageScale = FMax(Victims.CollisionRadius/(Victims.CollisionRadius + Victims.CollisionHeight),1 - FMax(0,(dist - Victims.CollisionRadius)/DamageRadius));
-		if ( Instigator == None || Instigator.Controller == None )
-			Victims.SetDelayedDamageInstigatorController(InstigatorController);
-		Victims.TakeDamage
-		(
-			damageScale * DamageAmount,
-			Instigator,
-			Victims.Location - 0.5 * (Victims.CollisionHeight + Victims.CollisionRadius) * dir,
-			(damageScale * Momentum * dir),
-			DamageType
-		);
-		if ( KFPawn(Victims) != none )
-				PlayerHits += 10;
-		if (Vehicle(Victims) != None && Vehicle(Victims).Health > 0)
-			Vehicle(Victims).DriverRadiusDamage(DamageAmount, DamageRadius, InstigatorController, DamageType, Momentum, HitLocation);
-	}
-
-	bHurtEntry = false;
+	super.HurtVictim(Victim, DamageAmount, HitLocation, Momentum, DamageType);
 }
 
 
@@ -205,7 +142,9 @@ defaultproperties
 	ArcSounds(2)=Sound'2009DoomMonstersSounds.BFG.arc_4'
 	Speed=1000.000000
 	MaxSpeed=1150.000000
+	bDirectionalExplode=true
 	Damage=50 // 60
+	ImpactDamage=15
 	DamageRadius=250.000000
 	MomentumTransfer=10000.000000
 	MyDamageType=Class'ScrnDoom3KF.DamTypeSabaothProj'
@@ -226,9 +165,9 @@ defaultproperties
 	SoundRadius=250.000000
 	TransientSoundVolume=1.500000
 	TransientSoundRadius=450.000000
-	CollisionRadius=16.000000
-	CollisionHeight=16.000000
+	CollisionRadius=20
+	CollisionHeight=20
 	bProjTarget=True
 	Health=100
-	ChargeTime=1.0
+	ChargeTime=0.5
 }

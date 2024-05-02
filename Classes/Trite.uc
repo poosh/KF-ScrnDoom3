@@ -49,7 +49,7 @@ simulated function ZombieCrispUp()
 
 defaultproperties
 {
-     LungeAttackDamage=18
+     LungeAttackDamage=15
      DeathAnims(2)="DeathCurl"
      DeathAnims(3)="DeathF"
      MeleeAttackSounds(0)=Sound'2009DoomMonstersSounds.Trite.Trite_attack18'
@@ -59,7 +59,7 @@ defaultproperties
      SightSound=Sound'2009DoomMonstersSounds.Trite.Trite_sight3'
      BurningMaterial=Shader'2009DoomMonstersTex.Trite.TriteShader'
      BurnDust=Class'ScrnDoom3KF.DoomDeResDustSmall'
-     MeleeDamage=14
+     MeleeDamage=10
      FootStep(0)=Sound'2009DoomMonstersSounds.Trite.trite_walk1'
      FootStep(1)=Sound'2009DoomMonstersSounds.Trite.trite_walk2'
      HitSound(0)=Sound'2009DoomMonstersSounds.Trite.Trite_pain13'
@@ -74,7 +74,7 @@ defaultproperties
      ChallengeSound(1)=Sound'2009DoomMonstersSounds.Trite.Trite_sight11'
      ChallengeSound(2)=Sound'2009DoomMonstersSounds.Trite.Trite_sight13'
      ChallengeSound(3)=Sound'2009DoomMonstersSounds.Trite.Trite_sight5'
-     ScoringValue=15
+     ScoringValue=12
      RagdollOverride="D3Trite"
      MeleeRange=35.000000
      GroundSpeed=115.000000
@@ -91,6 +91,6 @@ defaultproperties
      Skins(1)=Texture'2009DoomMonstersTex.Revenant.InvisMat'
      AmbientGlow=30
      CollisionHeight=22.000000
-	 
+
 	 FireRootBone="Spine1"
 }

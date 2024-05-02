@@ -1,6 +1,7 @@
 class RevenantProjectile extends DoomProjectile;
 
 var Actor Seeking;
+var float SeekingRate;
 var int Health;
 
 
@@ -28,14 +29,9 @@ simulated function PostBeginPlay()
 	SetTimer(0.1, true);
 }
 
-simulated function ProcessTouch (Actor Other, Vector HitLocation)
+simulated function vector GetImpactMomentum()
 {
-	if(Other != instigator && !Other.IsA('Projectile') && ExtendedZCollision(Other)==None )
-	{
-		if( Other.Role==ROLE_Authority )
-			Other.TakeDamage(Damage*0.6,Instigator,HitLocation,Velocity*10.f,MyDamageType);
-		Explode(HitLocation, vect(0,0,1));
-	}
+	return 10.0 * Velocity;
 }
 
 simulated function Timer()
@@ -44,13 +40,12 @@ simulated function Timer()
 	local float VelMag;
 	local rotator R;
 
-	if(Seeking != None)
-	{
+	if(Seeking != None) {
 		ForceDir = Normal(Seeking.Location - Location);
 		if( (ForceDir Dot Velocity) > 0 )
 		{
 			VelMag = VSize(Velocity);
-			ForceDir = Normal(ForceDir * 0.4 * VelMag + Velocity);
+			ForceDir = Normal(ForceDir * SeekingRate * VelMag + Velocity);
 			Velocity =  VelMag * ForceDir;
 			Acceleration += 55 * ForceDir;
 			R = rotator(Velocity);
@@ -61,24 +56,25 @@ simulated function Timer()
 	}
 }
 
-function TakeDamage( int Damage, Pawn InstigatedBy, Vector Hitlocation, Vector Momentum, class<DamageType> damageType, optional int HitIndex)
+function TakeDamage(int Damage, Pawn InstigatedBy, Vector Hitlocation, Vector Momentum, class<DamageType> damageType,
+		optional int HitIndex)
 {
 	local class<KFWeaponDamageType> KFWeapDam;
 
-	if ( bDeleteMe)
+	if (bDeleteMe)
 		return;
 
 	KFWeapDam = class<KFWeaponDamageType>(damageType);
-	if ( KFWeapDam == none || KFWeapDam.default.bIsExplosive || KFWeapDam.default.bDealBurningDamage)
+	if (KFWeapDam == none || KFWeapDam.default.bDealBurningDamage)
 		return;
 
-	if( damageType == class'SirenScreamDamage') {
+	if (damageType == class'SirenScreamDamage') {
 		Destroy();
 	}
 	else {
 		Health -= Damage;
 		if ( Health <= 0 ) {
-			Explode(HitLocation, vect(0,0,0));
+			Explode(HitLocation, vect(0,0,1));
 		}
 	}
 }
@@ -91,12 +87,15 @@ defaultproperties
 	ShakeRadius=600.0
 	ShakeScale=5.0
 
+	bNetTemporary=false
+	SeekingRate=0.8
 	Health=150
 	ImpactSound=SoundGroup'KF_LAWSnd.Rocket_Explode'
 	Speed=500.000000
 	MaxSpeed=800.000000
-	Damage=16.000000
-	DamageRadius=100.000000
+	Damage=16
+	ImpactDamage=10
+	DamageRadius=150.0
 	MyDamageType=Class'ScrnDoom3KF.DamTypeRevenantProjectile'
 	LightSaturation=127
 	DrawType=DT_StaticMesh
@@ -106,8 +105,8 @@ defaultproperties
 	Skins(1)=Texture'2009DoomMonstersTex.CyberDemon.RocketFin'
 	SoundRadius=150.000000
 	TransientSoundRadius=500.000000
-	CollisionRadius=3.000000
-	CollisionHeight=3.000000
+	CollisionRadius=10
+	CollisionHeight=10
 	bProjTarget=True
 	bFixedRotationDir=True
 	RotationRate=(Roll=12000)

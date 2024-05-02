@@ -2,8 +2,6 @@ class Cherub extends DoomMonster;
 
 var Sound FlutterSounds[2];
 var Sound RandomTaunts[10];
-var bool bLunging;
-var() int LungeAttackDamage;
 
 function ZombieMoan()
 {
@@ -70,6 +68,7 @@ function Landed(vector HitNormal)
 	}
 	Super.Landed(HitNormal);
 }
+
 singular function Bump(actor Other)
 {
 	if ( bShotAnim && bLunging && Pawn(Other)!=None && Controller!=None && Other==Controller.Target )

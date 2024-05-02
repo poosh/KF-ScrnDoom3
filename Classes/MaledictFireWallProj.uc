@@ -93,6 +93,8 @@ defaultproperties
 	Damage=30 // 20
 	DamageRadius=100.000000
 	MyDamageType=Class'ScrnDoom3KF.DamTypeMaledict'
+	InstigatorClass=class'Maledict'
+	bHurtSameSpecies=false
 	LightType=LT_Steady
 	LightEffect=LE_QuadraticNonIncidence
 	LightHue=28

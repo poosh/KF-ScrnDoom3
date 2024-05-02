@@ -88,12 +88,17 @@ var float OnlineHeadAnimationPhase;
 // original multiplier > 1.0
 var float MinHeadShotDamageMult;
 
+// v9.69.51 - moved from subclasses
+var int LungeAttackDamage;
+var transient bool bLunging;
+
 
 simulated function PostNetBeginPlay()
 {
 	Super.PostNetBeginPlay();
 	HealthMax = Max(HealthMax,Health); // Fix for commando healthbar with bosses.
 }
+
 simulated function RemoveFlamingEffects()
 {
 	local int i;
@@ -163,7 +168,10 @@ simulated function PostBeginPlay()
 {
 	Super.PostBeginPlay();
 
-	if ( Role < ROLE_Authority ) {
+	if (Role == ROLE_Authority) {
+		LungeAttackDamage = Max((DifficultyDamageModifer() * LungeAttackDamage), MeleeDamage);
+	}
+	else {
 		// spawn extended zed collision on client side for projector tracing (e.g., laser sights)
 		if ( bUseExtendedCollision && MyExtCollision == none )
 		{
@@ -549,33 +557,43 @@ simulated function StartDeRes()
 	bDeRes = true;
 }
 
+
+function InitFireProperties()
+{
+	SavedFireProperties.AmmoClass = Class'DoomAmmo';
+	SavedFireProperties.ProjectileClass = RangedProjectile;
+	SavedFireProperties.WarnTargetPct = 0.5;
+	SavedFireProperties.MaxRange = RangedProjectile.Default.Speed * RangedProjectile.Default.LifeSpan;
+	SavedFireProperties.bTossed = RangedProjectile.Default.Physics == PHYS_Falling;
+	SavedFireProperties.bTrySplash = RangedProjectile.Default.DamageRadius > 100.0;
+	SavedFireProperties.bLeadTarget = true;
+	SavedFireProperties.bInstantHit = false;
+}
+
 // damage scaled by DifficultyDamageModifer() now
 function Projectile FireProj( vector Position )
 {
-	local Projectile proj;
+	local DoomProjectile proj;
+	local float scale;
 
-	if ( !SavedFireProperties.bInitialized )
-	{
-		SavedFireProperties.AmmoClass = Class'SkaarjAmmo';
-		SavedFireProperties.ProjectileClass = RangedProjectile;
-		SavedFireProperties.WarnTargetPct = 0.5f;
-		SavedFireProperties.MaxRange = RangedProjectile.Default.Speed*RangedProjectile.Default.LifeSpan;
-		SavedFireProperties.bTossed = (RangedProjectile.Default.Physics==PHYS_Falling);
-		SavedFireProperties.bTrySplash = (RangedProjectile.Default.DamageRadius>20.f);
-		SavedFireProperties.bLeadTarget = true;
-		SavedFireProperties.bInstantHit = false;
+	if (!SavedFireProperties.bInitialized) {
+		InitFireProperties();
 		SavedFireProperties.bInitialized = true;
 	}
-	proj = Spawn(RangedProjectile,,,Position,Controller.AdjustAim(SavedFireProperties,Position,500.f));
+	proj = Spawn(RangedProjectile,,,Position,Controller.AdjustAim(SavedFireProperties, Position, 500.f));
 	if ( proj != none ) {
-		proj.Damage *= DifficultyDamageModifer();
+		scale = DifficultyDamageModifer();
+		proj.Damage *= scale;
+		proj.ImpactDamage *= scale;
 	}
 	return proj;
 }
+
 function DoorAttack(Actor A)
 {
 	RangedAttack(A);
 }
+
 simulated function PlayDyingAnimation(class<DamageType> DamageType, vector HitLoc)
 {
 	local vector shotDir, hitLocRel, deathAngVel, shotStrength;
@@ -770,8 +788,7 @@ function RoamAtPlayer()
 {
 	bHasRoamed = true;
 	PlaySound(SightSound,SLOT_Talk,2);
-	if( SightAnim!='' )
-	{
+	if (SightAnim!='') {
 		Controller.bPreparingMove = true;
 		SetAnimAction(SightAnim);
 		Acceleration = vect(0,0,0);
@@ -953,14 +970,17 @@ simulated function Timer()
 	}
 }
 
-function TakeDamage(int Damage, Pawn instigatedBy, Vector hitlocation, Vector momentum, class<DamageType> DamType, optional int HitIndex )
+function TakeDamage(int Damage, Pawn instigatedBy, Vector hitlocation, Vector momentum, class<DamageType> DamType,
+		optional int HitIndex)
 {
 	local bool bIncDamage, bIsFireDamage;
 	local KFPlayerReplicationInfo KFPRI;
 	local float HeadShotScale;
 	local string msg;
 	local class<KFWeaponDamageType> KFDamType;
+	local Doom3Controller D3C;
 
+	D3C = Doom3Controller(Controller);
 	LastDamagedBy = instigatedBy;
 	LastDamagedByType = DamType;
 	HitMomentum = VSize(momentum);
@@ -1077,22 +1097,18 @@ function TakeDamage(int Damage, Pawn instigatedBy, Vector hitlocation, Vector mo
 	} // end of if (KFDamType != none)
 	else {
 		// mark spot as bad, if monster took environmental damage
-		if ( Doom3Controller(Controller) != none && Level.TimeSeconds < Doom3Controller(Controller).LastTeleportTime + 10 )
-			Doom3Controller(Controller).IncLastTeleportDestRaiting(-0.5);
+		if ( D3C != none && Level.TimeSeconds < D3C.LastTeleportTime + 10 )
+			D3C.IncLastTeleportDestRaiting(-0.5);
+	}
+
+	if (DamType != none && D3C != none && LastDamagedBy != none && LastDamagedBy.IsPlayerPawn()
+			&& LastDamagedBy.Controller != none)
+	{
+		D3C.AddKillAssistant(LastDamagedBy.Controller, Damage);
 	}
 
 	Super(Monster).TakeDamage(Damage, instigatedBy, hitLocation, momentum, DamType, HitIndex);
 
-	// Beta8 - FIXED HUGE BUG
-	// Players didn't get any money for killing doom monsters (earned only team score)
-	// block below copy-pasted from KFMonster
-	if ( DamType != none && LastDamagedBy != none && LastDamagedBy.IsPlayerPawn() && LastDamagedBy.Controller != none )
-	{
-		if ( KFMonsterController(Controller) != none )
-		{
-			KFMonsterController(Controller).AddKillAssistant(LastDamagedBy.Controller, Damage);
-		}
-	}
 
 	if( bLastHeadshot && Health<=0 )
 	{
@@ -1107,7 +1123,6 @@ function TakeDamage(int Damage, Pawn instigatedBy, Vector hitlocation, Vector mo
 	}
 
 	if ( bEndGameBoss ) {
-
 		// Boss whining about retarded demons :)
 		if (instigatedBy != self && DoomMonster(instigatedBy) != none && Level.TimeSeconds > NextChatTime ) {
 			msg = strRetardedDemonsArray[Rand(strRetardedDemonsArray.Length)];
