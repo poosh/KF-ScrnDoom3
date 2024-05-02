@@ -13,6 +13,11 @@ Doom3 Monsters for Killing Floor 1 - ScrN Edition
 # Version History
 *Starting from v5, ScrnDoom3KF version matches the newest version of ScrN Balance available on the release day.*
 
+### v9.69.53
+- **Revenant**: removed additional rocket impact damage. Now rockets do aprox. the same damage as before v9.69.51.
+- **Cacodemon** lowered projectile base damage to 20 (down from 25), HoE - 35 (43) to compensate for damage increase due to player collision fix.
+- **Berserker**: increased base damage resistance to 50% (up from 40%) and closed chest resistance to 25% (up from 20%).
+
 ### v9.69.51
 - Fixed a bug where Doom projectiles collided with `KFBulletWhipAttachment` - an auxiliary cylinder around players. As a result, players were 3x wider (from the projectile's perspective), making it ridiculously hard to dodge projectiles. On the other hand, Doom projectiles dealt ~30% less damage due to exploding farther from the player. In other words, ranged Doom Demons were acting like KF2 - dealing inevitable but low damage. After the fix, they fit more into KF1 - projectiles can be avoided but deal crucial damage when hit, rewarding skill over RNG.
 - Doom AI Skill level is now scaled across difficulties, allowing ranged Doom Demons to aim better on Suicidal or Hell on Earth. Previously, Doom AI was always "Skilled". Now, it is "Masterful" on Suicidal and "Godlike" on Hell on Earth (speaking in Unreal Tournament terms). Higher-skilled enemies can predict player movement and shoot ahead, or even shoot at the ground below the target for splash damage.
@@ -32,7 +37,6 @@ Doom3 Monsters for Killing Floor 1 - ScrN Edition
 - **Sabaoth**: Increased BFG cell's collision to match the visual size.
 - **Sabaoth**: BFG cell deals additional damage on direct hit.
 - **Sabaoth**: The explosion of a destoryed BFG cell (shot by players) no longer damages the players around.
--
 
 ### v9.69.50
 - Adjusted bounty of some demons

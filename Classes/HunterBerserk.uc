@@ -303,11 +303,11 @@ function TakeDamage( int Damage, Pawn InstigatedBy, vector HitLocation, vector M
 
 	if ( Damage > 0) {
 		if( !IsHeadShot(HitLocation,Normal(Momentum),1.f) )
-			Damage *= 0.6; // 40% damage resistance to body damage
+			Damage *= 0.5; // 50% damage resistance to body damage
 		else if( bLunging || Level.TimeSeconds < ChestOpenedUntil )
 			Damage *= 2.5; // shot in the opened chest
 		else
-			Damage *= 0.8; // 20% damage resistance to the closed chest
+			Damage *= 0.75; // 25% damage resistance to the closed chest
 	}
 	OldHealth = Health;
 	Super.TakeDamage(Damage,InstigatedBy,HitLocation,Momentum,DamageType,HitIndex);

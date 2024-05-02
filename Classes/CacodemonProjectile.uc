@@ -22,7 +22,7 @@ defaultproperties
 	NewImpactSounds(2)=Sound'2009DoomMonstersSounds.Cacodemon.caco_pimpact_05'
 	Speed=900.000000
 	MaxSpeed=1500.000000
-	Damage=25 // 15
+	Damage=20 // 15
 	DamageRadius=150.000000
 	MomentumTransfer=10000.000000
 	MyDamageType=Class'ScrnDoom3KF.DamTypeCacodemonProj'

@@ -94,7 +94,7 @@ defaultproperties
 	Speed=500.000000
 	MaxSpeed=800.000000
 	Damage=16
-	ImpactDamage=10
+	ImpactDamage=0
 	DamageRadius=150.0
 	MyDamageType=Class'ScrnDoom3KF.DamTypeRevenantProjectile'
 	LightSaturation=127
