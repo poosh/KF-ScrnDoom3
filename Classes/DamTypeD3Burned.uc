@@ -1,4 +1,4 @@
-class DamTypeD3Burned extends DamTypeBurned
+class DamTypeD3Burned extends DamTypeBaseDoomBurn
 	abstract;
 
 defaultproperties

@@ -1,4 +1,4 @@
-class DamTypeD3Proj extends DamTypeZombieAttack
+class DamTypeD3Proj extends DamTypeBaseDoomProj
 	abstract;
 
 

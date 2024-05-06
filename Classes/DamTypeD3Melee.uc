@@ -1,4 +1,4 @@
-class DamTypeD3Melee extends ZombieMeleeDamage
+class DamTypeD3Melee extends DamTypeBaseDoomMelee
 	abstract;
 
 defaultproperties
