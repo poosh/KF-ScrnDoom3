@@ -194,6 +194,7 @@ defaultproperties
      AirSpeed=100.000000
      HealthMax=280.000000
      HeadBone="head_FK"
+     RootBone="Hips"
      Health=280
      HeadRadius=12.000000
      MenuName="Wraith"

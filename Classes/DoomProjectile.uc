@@ -213,4 +213,5 @@ defaultproperties
 	bHurtSameSpecies=true
 	TransientSoundVolume=1.0
 	ShakeScale=1.0
+	LifeSpan=10
 }

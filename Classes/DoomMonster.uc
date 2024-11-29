@@ -563,7 +563,8 @@ function InitFireProperties()
 	SavedFireProperties.AmmoClass = Class'DoomAmmo';
 	SavedFireProperties.ProjectileClass = RangedProjectile;
 	SavedFireProperties.WarnTargetPct = 0.5;
-	SavedFireProperties.MaxRange = RangedProjectile.Default.Speed * RangedProjectile.Default.LifeSpan;
+	SavedFireProperties.MaxRange = fclamp(RangedProjectile.Default.LifeSpan * (RangedProjectile.Default.Speed
+			+ (RangedProjectile.Default.MaxSpeed - RangedProjectile.Default.Speed)/2.0), 100, 10000);
 	SavedFireProperties.bTossed = RangedProjectile.Default.Physics == PHYS_Falling;
 	SavedFireProperties.bTrySplash = RangedProjectile.Default.DamageRadius > 100.0;
 	SavedFireProperties.bLeadTarget = true;
@@ -575,6 +576,9 @@ function Projectile FireProj( vector Position )
 {
 	local DoomProjectile proj;
 	local float scale;
+
+	if (RangedProjectile == none)
+		return none;
 
 	if (!SavedFireProperties.bInitialized) {
 		InitFireProperties();
