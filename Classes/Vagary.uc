@@ -395,4 +395,5 @@ defaultproperties
 
 	FireRootBone="BabySpine1"
 	ZapThreshold=5
+	RootBone="Waist"
 }

@@ -310,4 +310,5 @@ defaultproperties
 	HeadBone2="Lhead" //8.11
 	HeadRadius=12
 	ZappedDamageMod=1.5
+	RootBone="Hips"
 }

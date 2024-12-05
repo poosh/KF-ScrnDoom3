@@ -92,5 +92,6 @@ defaultproperties
      AmbientGlow=30
      CollisionHeight=22.000000
 
-	 FireRootBone="Spine1"
+	FireRootBone="Spine1"
+	RootBone="Belly"
 }

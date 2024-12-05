@@ -175,4 +175,5 @@ defaultproperties
      MotionDetectorThreat=0.26 //5.14
      ZappedDamageMod=2.0
      ZapThreshold=0.25
+	RootBone="Hips"
 }

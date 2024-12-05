@@ -340,4 +340,5 @@ defaultproperties
 
      ZapThreshold=0.75
      ZappedDamageMod=1.5
+	RootBone="Hips"
 }

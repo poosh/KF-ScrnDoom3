@@ -298,4 +298,5 @@ defaultproperties
      CollisionRadius=20.000000
      CollisionHeight=44 //50
      ZapThreshold=1.50
+	RootBone="Hips"
 }

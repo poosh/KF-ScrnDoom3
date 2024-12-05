@@ -491,6 +491,6 @@ defaultproperties
 	CollisionHeight=40
 	Mass=3000.000000
 	MaxMeleeAttacks=3
-	RootBone="HK_jaw_2"
 	ZapThreshold=3
+	RootBone="Hips"
 }

@@ -446,4 +446,5 @@ defaultproperties
      ColHeight=60
 
      ZapThreshold=2
+	RootBone="Hips"
 }

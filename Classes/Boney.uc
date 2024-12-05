@@ -173,4 +173,5 @@ defaultproperties
      HeadOffset=(X=-1,Y=1,Z=0)
      ZappedDamageMod=2.0
      ZapThreshold=0.25
+	RootBone="Hips"
 }

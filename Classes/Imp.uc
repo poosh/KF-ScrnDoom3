@@ -424,4 +424,5 @@ defaultproperties
 
      LeftFArmBone="lhand"
      RightFArmBone="rhand"
+	RootBone="Hips"
  }

@@ -510,4 +510,5 @@ defaultproperties
 	 ZapThreshold=5.0
 	 ZappedDamageMod=2.0
 	 MaxMeleeAttacks=6
+	RootBone="Hips"
 }

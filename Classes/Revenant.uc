@@ -400,4 +400,5 @@ defaultproperties
      ColOffset=(X=20,Z=35)
      ColRadius=30
      ColHeight=20
+	RootBone="Hips"
 }

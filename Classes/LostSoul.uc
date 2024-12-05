@@ -236,4 +236,5 @@ defaultproperties
 
      MotionDetectorThreat=0.25 //5.14
      MinHeadShotDamageMult=1.0 //9.20
+	RootBone="head"
 }

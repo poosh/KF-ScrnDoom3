@@ -233,4 +233,5 @@ defaultproperties
 
      MotionDetectorThreat=0.34 //5.14
      ZappedDamageMod=2.0
+	RootBone="Belly"
 }
