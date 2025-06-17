@@ -414,7 +414,7 @@ function Mutate(string MutateString, PlayerController Sender)
 
 defaultproperties
 {
-	VersionNumber=97200
+	VersionNumber=97207
 
 	MinDoomPct=0.10
 	MaxDoomPct=0.20
@@ -423,16 +423,16 @@ defaultproperties
 	MaxSpawnDelay=35.000000
 
 	bSpawnDemons=true
-	Demons(00)="Boney"
-	Demons(01)="FatZombie"
-	Demons(02)="Imp"
-	Demons(03)="Tick"
-	Demons(04)="Trite"
-	Demons(05)="Sawyer"
-	Demons(06)="Pinky"
-	Demons(07)="Maggot"
-	Demons(08)="LostSoul"
-	Demons(09)="Cherub"
+	Demons(0)="Boney"
+	Demons(1)="FatZombie"
+	Demons(2)="Imp"
+	Demons(3)="Tick"
+	Demons(4)="Trite"
+	Demons(5)="Sawyer"
+	Demons(6)="Pinky"
+	Demons(7)="Maggot"
+	Demons(8)="LostSoul"
+	Demons(9)="Cherub"
 	Demons(10)="Cacodemon"
 	Demons(11)="Wraith"
 	Demons(12)="Revenant"

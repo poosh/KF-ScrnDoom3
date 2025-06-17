@@ -88,11 +88,11 @@ defaultproperties
 	ShakeScale=5.0
 
 	bNetTemporary=false
-	SeekingRate=0.8
+	SeekingRate=0.7
 	Health=150
 	ImpactSound=SoundGroup'KF_LAWSnd.Rocket_Explode'
-	Speed=500.000000
-	MaxSpeed=800.000000
+	Speed=400.000000
+	MaxSpeed=600.000000
 	Damage=16
 	ImpactDamage=0
 	DamageRadius=150.0

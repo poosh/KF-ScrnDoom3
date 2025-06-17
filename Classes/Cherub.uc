@@ -167,7 +167,8 @@ defaultproperties
      FireRifleBurstAnim="Play_Dead"
      MeleeRange=60.000000
      GroundSpeed=160.000000
-     HealthMax=150.000000
+     Health=110
+     HealthMax=110
      HeadRadius=10.000000
      MenuName="Cherub"
      MovementAnims(0)="Crawl1"

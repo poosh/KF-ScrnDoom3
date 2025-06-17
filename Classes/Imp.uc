@@ -360,8 +360,8 @@ defaultproperties
      RagdollOverride="D3Imp"
      MeleeRange=40.000000
      GroundSpeed=200.000000
-     HealthMax=320.000000
-     Health=320
+     HealthMax=200
+     Health=200
      HeadRadius=12.000000
      MenuName="Imp"
      MovementAnims(0)="WalkFast"
