@@ -117,20 +117,20 @@ function IncLastTeleportDestRaiting(float inc, optional bool bContinueRating)
 function bool CanKillMeYet()
 {
 	local Controller C;
-    local bool bBoss;
+	local bool bBoss;
 
-    bBoss = DoomBoss(KFM) != none;
+	bBoss = DoomBoss(KFM) != none;
 
 	if( !bInitKill )
 	{
 		bInitKill = true;
-        //beta 9 - give more time before killing bosses
-        if ( bBoss )
-            ValidKillTime = Level.TimeSeconds+600; // 10 minutes
-        else if ( KFM.default.Health >= 1000 )
-            ValidKillTime = Level.TimeSeconds+60;
-        else
-            ValidKillTime = Level.TimeSeconds+20; //kill small stuff earlier
+		//beta 9 - give more time before killing bosses
+		if ( bBoss )
+			ValidKillTime = Level.TimeSeconds+600; // 10 minutes
+		else if ( KFM.default.Health >= 1000 )
+			ValidKillTime = Level.TimeSeconds+60;
+		else
+			ValidKillTime = Level.TimeSeconds+20; //kill small stuff earlier
 
 		NextTeleTimeOnStakeOut = Level.TimeSeconds+FRand()*5.f;
 		NextTeleTimeOnHunt = Level.TimeSeconds+FRand()*10.f;
@@ -156,13 +156,13 @@ function bool CanKillMeYet()
 		KFM.GroundSpeed = KFM.OriginalGroundSpeed;
 	}
 
-    NoneSightCount++;
+	NoneSightCount++;
 
-    if( ValidKillTime>Level.TimeSeconds )
+	if( ValidKillTime>Level.TimeSeconds )
 		return false;
-    if (bBoss)
-        return ( NoneSightCount>300);
-	return ( NoneSightCount>30);
+	if (bBoss)
+		return NoneSightCount > 300;
+	return NoneSightCount > 10;
 }
 
 function bool FireWeaponAt(Actor A) // Don't fire until finished turning toward enemy.
@@ -185,12 +185,14 @@ function bool FindFreshBody()
 {
 	return false; // Never feed on player corpses.
 }
+
 function DoTacticalMove()
 {
 	if( Enemy!=None && LineOfSightTo(Enemy) && DoomMonster(Pawn).ShouldTryRanged(Enemy) )
 		GoToState('ZombieHunt','DoRangeNow');
 	else GotoState('TacticalMove');
 }
+
 function rotator AdjustAim(FireProperties FiredAmmunition, vector projStart, int aimerror)
 {
 	local rotator FireRotation, TargetLook;
@@ -201,7 +203,7 @@ function rotator AdjustAim(FireProperties FiredAmmunition, vector projStart, int
 	local bool bDefendMelee, bClean, bLeadTargetNow;
 
 	if ( DoomMonster(Pawn).RangedProjectile!=None )
-		projspeed = DoomMonster(Pawn).RangedProjectile.Default.Speed;
+		projspeed = fmax(1.0, DoomMonster(Pawn).RangedProjectile.Default.Speed);
 	else projspeed = 2000.f;
 
 	// make sure bot has a valid target
@@ -367,6 +369,54 @@ function rotator AdjustAim(FireProperties FiredAmmunition, vector projStart, int
 
 	SetRotation(FireRotation);
 	return FireRotation;
+}
+
+function float AdjustAimError(float aimerror, float TargetDist, bool bDefendMelee, bool bInstantProj,
+		bool bLeadTargetNow )
+{
+	if ( (Pawn(Target) != None) && (Pawn(Target).Visibility < 2) )
+		aimerror *= 2.5;
+
+	// figure out the relative motion of the target across the bots view, and adjust aim error
+	// based on magnitude of relative motion
+	aimerror = aimerror * FMin(5,(12 - 11 * (Normal(Target.Location - Pawn.Location)
+			Dot Normal((Target.Location + 1.2 * Target.Velocity) - (Pawn.Location + Pawn.Velocity)))));
+
+	// if enemy is charging straight at bot with a melee weapon, improve aim
+	if ( bDefendMelee )
+		aimerror *= 0.5;
+
+	if ( Target.Velocity == vect(0,0,0) )
+		aimerror *= 0.6;
+
+	// aiming improves over time if stopped
+	if ( Stopped() && (Level.TimeSeconds > StopStartTime) )
+	{
+		if ( (Skill+Accuracy) > 4 )
+			aimerror *= 0.9;
+		aimerror *= FClamp((2 - 0.08 * FMin(skill,7) - FRand()) / (Level.TimeSeconds - StopStartTime + 0.4),
+				0.7, 1.0);
+	}
+
+	// adjust aim error based on skill
+	if ( !bDefendMelee )
+		aimerror *= (3.3 - 0.37 * (FClamp(skill+Accuracy,0,8.5) + 0.5 * FRand()));
+
+	// Bots don't aim as well if recently hit, or if they or their target is flying through the air
+	if ( ((skill < 7) || (FRand()<0.5)) && (Level.TimeSeconds - Pawn.LastPainTime < 0.2) )
+		aimerror *= 1.3;
+	if ( (Pawn.Physics == PHYS_Falling) || (Target.Physics == PHYS_Falling) )
+		aimerror *= 1.6;
+
+	// Bots don't aim as well at recently acquired targets (because they haven't had a chance to lock in to the target)
+	if ( AcquireTime > Level.TimeSeconds - 0.5 - 0.6 * (7 - skill) )
+	{
+		aimerror *= 1.5;
+		if ( bInstantProj )
+			aimerror *= 1.5;
+	}
+
+	return (Rand(2 * aimerror) - aimerror);
 }
 
 static function bool TestSpot( LevelInfo Map, out VolumeColTester T, vector P, class<Actor> A )

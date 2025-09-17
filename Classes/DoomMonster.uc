@@ -564,7 +564,8 @@ function InitFireProperties()
 	SavedFireProperties.ProjectileClass = RangedProjectile;
 	SavedFireProperties.WarnTargetPct = 0.5;
 	SavedFireProperties.MaxRange = fclamp(RangedProjectile.Default.LifeSpan * (RangedProjectile.Default.Speed
-			+ (RangedProjectile.Default.MaxSpeed - RangedProjectile.Default.Speed)/2.0), 100, 10000);
+			+ (RangedProjectile.Default.MaxSpeed - RangedProjectile.Default.Speed)/2.0),
+			100, SavedFireProperties.AmmoClass.default.MaxRange);
 	SavedFireProperties.bTossed = RangedProjectile.Default.Physics == PHYS_Falling;
 	SavedFireProperties.bTrySplash = RangedProjectile.Default.DamageRadius > 100.0;
 	SavedFireProperties.bLeadTarget = true;
@@ -1440,6 +1441,7 @@ defaultproperties
 	BurnAnimTime=1.000000
 	BurnSpeed=1
 	FadingBurnMaterial=Texture'2009DoomMonstersTex.Symbols.DoomFire'
+    BurnEffect=Class'DoomMonsterFlame'
 	BurnDuration=8
 	BurnInCount=2
 	MinHeadShotDamageMult=1.5
