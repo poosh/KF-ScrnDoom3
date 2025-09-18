@@ -410,7 +410,7 @@ function Mutate(string MutateString, PlayerController Sender)
 
 defaultproperties
 {
-	VersionNumber=97217
+	VersionNumber=97218
 
 	MinDoomPct=0.10
 	MaxDoomPct=0.20

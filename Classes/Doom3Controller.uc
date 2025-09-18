@@ -466,11 +466,11 @@ function bool FindTeleportDest(ETeleDestType DestType)
 				PickCloseTeleportDest();
 				break;
 			case TD_Far:
-				TelePoints[1] = FindFarTeleportDest();
+				TelePoints[0] = FindFarTeleportDest();
 				break;
 			case TD_Random:
 			default:
-				TelePoints[1] = FindRandomDest();
+				TelePoints[0] = FindRandomDest();
 				break;
 		}
 	}
@@ -478,7 +478,7 @@ function bool FindTeleportDest(ETeleDestType DestType)
 	while (TelePoints.Length > 0) {
 		i = rand(TelePoints.Length);
 		N = TelePoints[i];
-		TelePoints.remove(i, 10);
+		TelePoints.remove(i, 1);
 		if (N == LastTeleportedTo)
 			continue;
 
