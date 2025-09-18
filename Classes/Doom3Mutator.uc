@@ -19,7 +19,6 @@ var int LastScannedWave;
 var array< class<DoomMonster> > DemonClasses, BossClasses;
 var float ProgressPct;
 
-var Doom3GameRules GameRules;
 var Doom3ReplicationInfo RI;
 
 var transient bool bDemonsEnabled, bBossesEnabled, bEndGameBossEnabled;
@@ -35,11 +34,8 @@ function PostBeginPlay()
 	if ( bDeleteMe )
 		return;
 
-	GameRules = Spawn(Class'Doom3GameRules', self);
-	GameRules.Mut = self;
 	RI = spawn(Class'Doom3ReplicationInfo', self);
 	RI.PrecacheMonsterMask = 0;
-	class'ScrnDoom3KF.Doom3Controller'.default.TeleportDestinations.length = 0; // reset navigation points
 
 	bDemonsEnabled = bSpawnDemons;
 	bBossesEnabled = bSpawnBosses;
@@ -414,7 +410,7 @@ function Mutate(string MutateString, PlayerController Sender)
 
 defaultproperties
 {
-	VersionNumber=97216
+	VersionNumber=97217
 
 	MinDoomPct=0.10
 	MaxDoomPct=0.20

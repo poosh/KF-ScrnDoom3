@@ -1,25 +1,30 @@
 Class Doom3Controller extends KFMonsterController;
 
+enum ETeleDestType {
+	TD_None,
+	TD_Close,
+	TD_Far,
+	TD_Random
+};
+var ETeleDestType LastTeleDestType;
+
 var transient float ValidKillTime,NextTeleTimeOnStakeOut,NextTeleTimeOnHunt,LastTeleportTime;
-var transient int TeleCount;
-var transient bool bRateTeleportDest;
+var transient int TeleCount, TeleAttempts;
 var NavigationPoint LastTeleportedTo;
 var vector TeleDest;
-var bool bInitKill, bTeleValid, bSleepOnTele;
+var bool bInitKill;
+var bool bTeleValid, bSleepOnTele;
+var array<NavigationPoint> TelePoints;
+
+var float CloseTeleMinDist;  // min distance to the player squared
+var float CloseTeleMaxDist;  // max distance to the player squared during for close teleport
+var float FarTeleMinSq;  // max distance to the player squared during for close teleport
 var int TeleDelayCount;
 var byte NoneSightCount;
 var Actor RandStakeMoveGoal;
 
 var VolumeColTester Tst;
 
-struct TeleportDestination {
-	var NavigationPoint Point;
-	var float Rating; // higher rating = higher chance to teleport to this destination
-
-};
-var transient array<TeleportDestination> TeleportDestinations; // should be used statically (default.TeleportDestinations)
-var transient array<NavigationPoint> BestTeleportPoints; // should be used statically (default.TeleportDestinations)
-var transient float BestDestRatio; // if TeleportDestination.Rating >= BestDestRatio, it will be added to BestTeleportPoints
 var transient float GlobalNextTeleportTime;
 
 function BeginPlay()
@@ -36,82 +41,6 @@ function ResetSkill()
 {
 	bLeadTarget = Skill >= 4;
 }
-
-static function InitTeleportPoints(LevelInfo Level)
-{
-	local int i;
-	local NavigationPoint N;
-
-	for( N=Level.NavigationPointList; N!=None; N=N.NextNavigationPoint )
-		++i;
-
-	default.TeleportDestinations.Length = i;
-
-	i = 0;
-	for( N=Level.NavigationPointList; N!=None; N=N.NextNavigationPoint ) {
-		default.TeleportDestinations[i].Point = N;
-		default.TeleportDestinations[i].Rating = 0.5;
-
-		++i;
-	}
-}
-
-static function BadTeleportDest(NavigationPoint P)
-{
-	local int i;
-
-	for ( i=0; i < default.TeleportDestinations.Length; ++i ) {
-		if ( default.TeleportDestinations[i].Point == P ) {
-			default.TeleportDestinations.remove(i, 1);
-			return;
-		}
-	}
-}
-
-static function AddToBest(NavigationPoint P)
-{
-	default.BestTeleportPoints[default.BestTeleportPoints.length] = P;
-}
-static function RemoveFromBest(NavigationPoint P)
-{
-	local int i;
-
-	for ( i=0; i < default.BestTeleportPoints.Length; ++i ) {
-		if (default.BestTeleportPoints[i] == P) {
-				default.BestTeleportPoints.remove(i,1);
-				return;
-		}
-	}
-}
-
-static function IncTeleportDestRaiting(NavigationPoint P, float inc)
-{
-	local int i;
-	local float NewRating;
-
-	for ( i=0; i < default.TeleportDestinations.Length; ++i ) {
-		if ( default.TeleportDestinations[i].Point == P ) {
-			NewRating = default.TeleportDestinations[i].Rating + inc;
-			if ( NewRating >= default.BestDestRatio && default.TeleportDestinations[i].Rating < default.BestDestRatio ) {
-				AddToBest(P);
-			}
-			else if ( NewRating < default.BestDestRatio && default.TeleportDestinations[i].Rating >= default.BestDestRatio ) {
-				RemoveFromBest(P);
-			}
-			default.TeleportDestinations[i].Rating = NewRating;
-			return;
-		}
-	}
-}
-
-function IncLastTeleportDestRaiting(float inc, optional bool bContinueRating)
-{
-	if ( bRateTeleportDest && inc != 0 ) {
-		IncTeleportDestRaiting(LastTeleportedTo, inc);
-		bRateTeleportDest = bContinueRating;
-	}
-}
-
 
 // Get rid of this Zed if he's stuck somewhere and noone has seen him
 function bool CanKillMeYet()
@@ -437,135 +366,128 @@ static function bool TestSpot( LevelInfo Map, out VolumeColTester T, vector P, c
 	return T.SetLocation(P);
 }
 
-function NavigationPoint PickBestTeleportDest()
-{
-	if ( default.BestTeleportPoints.length == 0)
-		return none;
+// TODO: Switch to the ScrnF function
+static final function int GetAlivePlayers(GameInfo Game, out array<PlayerController> Players) {
+    local Controller C;
+    local int i;
 
-	return default.BestTeleportPoints[rand(default.BestTeleportPoints.length)];
+    // The below lines produces a NULL access warning if called client-side to indicate that
+    // the function must be called server-side only.
+    Players.length = Game.NumPlayers;
+    for (C = Game.Level.ControllerList; C != none; C = C.nextController) {
+        if (C.bIsPlayer && C.Pawn != none && C.Pawn.Health > 0) {
+            Players[i] = PlayerController(C);
+            if (Players[i] != none) {
+                ++i;
+            }
+        }
+    }
+    Players.length = i;
+    return i;
 }
 
 //returns navigation point close to a player
-function NavigationPoint PickCloseTeleportDest()
+function PickCloseTeleportDest()
 {
-	local Controller C;
-	local PlayerController Player;
 	local array<PlayerController> Players;
-	local array<NavigationPoint> Points;
-	local NavigationPoint N;
+	local PlayerController Player;
+	local PathNode N;
 	local float MinDistSq;
-	local int i;
 
-	for ( C = Level.ControllerList; C != none; C = C.nextController ) {
-		Player = PlayerController(C);
-		if ( Player != none && Player.Pawn != none && Player.Pawn.Health > 0 ) {
-			Players[i++] = Player;
-		}
-	}
-	if (Players.length == 0)
-		return none; //wtf?
-
+	if (GetAlivePlayers(Level.Game, Players) == 0)
+		return;  // wtf?
 
 	Player = Players[rand(Players.length)];
-	MinDistSq = (Player.CollisionRadius + KFM.CollisionRadius + 100) ** 2;
-	foreach Player.RadiusActors(class'NavigationPoint', N, 1000) {
-		// same floor, in 20m radius
-		if ( (Player.Location.Z - N.Location.Z < 200)
-				&& (Player.Location.Z - N.Location.Z > -200)
-				&& VSizeSquared(N.Location-Player.Location) > MinDistSq ) {
-			//debug
-			Points[Points.Length] = N;
-			if ( Points.Length >= 50 )
+	MinDistSq = Square(CloseTeleMinDist);
+	foreach Player.RadiusActors(class'PathNode', N, CloseTeleMaxDist, Player.Pawn.Location) {
+		// same floor, in 40m radius
+		if (abs(Player.Location.Z - N.Location.Z) < 90
+				&& VSizeSquared(N.Location - Player.Location) > MinDistSq) {
+			TelePoints[TelePoints.Length] = N;
+			if (TelePoints.Length >= 20)
+				break;
+		}
+	}
+}
+
+function NavigationPoint FindFarTeleportDest()
+{
+	local array<PlayerController> Players;
+	local NavigationPoint N, Best;
+	local int i, c;
+	local float MinDistSq, DistSq, BestDistSq;
+
+	if (GetAlivePlayers(Level.Game, Players) == 0)
+		return FindRandomDest();  // wtf?
+
+	while (++c <= 20) {
+		N = FindRandomDest();
+		MinDistSq = 999999999;
+		for (i = 0; i < Players.Length; ++i) {
+			DistSq = VSizeSquared(N.Location - Players[i].Location);
+			if (DistSq < FarTeleMinSq)
+				break;
+			MinDistSq = fmin(MinDistSq, DistSq);
+		}
+		if (i < Players.Length) continue;  // too close
+
+		for (i = 0; i < Players.Length; ++i) {
+			if (FastTrace(N.Location - Players[i].Location))
+				break;  // visible
+		}
+		if (i == Players.Length) {
+			// An invisible point - use it;
+			return N;
+		}
+
+		if (MinDistSq > BestDistSq) {
+			Best = N;
+			BestDistSq = MinDistSq;
+		}
+	}
+	return Best;
+}
+
+function bool FindTeleportDest(ETeleDestType DestType)
+{
+	local NavigationPoint N;
+	local int i;
+
+	bTeleValid = false;
+
+	if (DestType != LastTeleDestType) {
+		TelePoints.Length = 0;
+	}
+
+	if (TelePoints.Length == 0) {
+		LastTeleDestType = DestType;
+		switch (DestType) {
+			case TD_Close:
+				PickCloseTeleportDest();
+				break;
+			case TD_Far:
+				TelePoints[1] = FindFarTeleportDest();
+				break;
+			case TD_Random:
+			default:
+				TelePoints[1] = FindRandomDest();
 				break;
 		}
 	}
 
-	if ( Points.Length == 0 )
-		return none;
+	while (TelePoints.Length > 0) {
+		i = rand(TelePoints.Length);
+		N = TelePoints[i];
+		TelePoints.remove(i, 10);
+		if (N == LastTeleportedTo)
+			continue;
 
-	//Level.Game.BroadCast(Player, "Close teleportation ("$Points.length$")");
-	return Points[rand(Points.length)];
-}
-
-function NavigationPoint PickTeleportDest()
-{
-	local int i, j, k;
-	local float r;
-	local float MaxRating;
-	local NavigationPoint MaxRatingPoint;
-
-	if ( default.TeleportDestinations.length == 0 )
-		InitTeleportPoints(Level);
-
-	i = Rand(default.TeleportDestinations.length);
-	MaxRatingPoint = default.TeleportDestinations[i].Point;
-	MaxRating = default.TeleportDestinations[i].Rating;
-
-	j = 10;
-	while ( j-- > 0 ) {
-		r = frand();
-		i = Rand(default.TeleportDestinations.length);
-		k = 10;
-		while ( k-- > 0 ) {
-			if ( default.TeleportDestinations[i].Rating >= r)
-				return default.TeleportDestinations[i].Point;
-			else if ( default.TeleportDestinations[i].Rating > MaxRating && frand()<0.75 ) {
-				MaxRatingPoint = default.TeleportDestinations[i].Point;
-				MaxRating = default.TeleportDestinations[i].Rating;
-			}
-
-			i = Rand(default.TeleportDestinations.length);
-			if ( ++i >= default.TeleportDestinations.length )
-				i = 0; //search from begining
+		if (TestSpot(Level, Tst, N.Location, Pawn.Class)) {
+			TeleDest = Tst.Location;
+			LastTeleportedTo = N;
+			bTeleValid = true;
+			return true;
 		}
-	}
-	// random didn't worked, so return the point with highest rating from searched ones
-	return MaxRatingPoint;
-}
-
-function bool FindTeleportDest(bool bUseClosePoints, bool bUseBestPoints)
-{
-	local NavigationPoint N;
-	local int k;
-	local float r;
-
-	bTeleValid = false;
-	// monster is supposed to teleport again - so previous teleport destination wasn't good enough
-	if ( LastTeleportedTo != none )
-		IncLastTeleportDestRaiting(-0.05);
-
-	r = frand();
-
-	// 20% change to spawn close to players, or 75%, if all monsters are spawned already
-	if ( bUseClosePoints && (r > 0.80 || (r > 0.25 && KFGameType(Level.Game).TotalMaxMonsters == 0)) )
-		N = PickCloseTeleportDest();
-
-	// do not use best spots, if all monsters were spawned already
-	if ( bUseBestPoints && N == none && KFGameType(Level.Game).TotalMaxMonsters > 0 && r < fmin(0.5, default.BestTeleportPoints.length * 0.05) ) {
-		N = PickBestTeleportDest();
-	}
-
-	if ( N == none ) {
-		N = PickTeleportDest();
-	}
-
-	k = 20; // 20 tries
-	while ( k-- > 0 ) {
-		// do not teleport to the same spot twice
-		if ( N != LastTeleportedTo ) {
-			if( TestSpot(Level,Tst,N.Location,Pawn.Class) ||
-				 TestSpot(Level,Tst,N.Location+vect(0,0,1)*(Pawn.CollisionHeight-N.CollisionHeight),Pawn.Class) )
-			{
-				TeleDest = Tst.Location;
-				LastTeleportedTo = N;
-				bTeleValid = true;
-				return true;
-			}
-			else {
-				IncTeleportDestRaiting(N, -0.1); // can't spawn here - so lower point's rating
-			}
-		}
-		N = PickTeleportDest();
 	}
 	return false;
 }
@@ -880,7 +802,7 @@ Begin:
 		StopFiring();
 	Sleep(0.4 + FRand()*0.4);
 	if( (bInitKill || (Level.TimeSeconds-LastSeenTime)>10.f) && Level.TimeSeconds>NextTeleTimeOnStakeOut
-			&& FindTeleportDest(true, true) )
+			&& FindTeleportDest(TD_Close) )
 	{
 		// Level.GetLocalPlayerController().ClientMessage(Pawn $ " teleporting due to being stuck");
 		bSleepOnTele = true;
@@ -900,16 +822,23 @@ state Teleport
 {
 Begin:
 	bSleepOnTele = true;
-	FindTeleportDest(true, true);
+	FindTeleportDest(TD_Close);
+	TeleAttempts = 0;
 
 DoTele:
-	Pawn.Acceleration = vect(0,0,0);
-	Focus = None;
-	FinishRotation();
-	StopFiring();
-	NextTeleTimeOnStakeOut = 0;
-	NextTeleTimeOnHunt = 0;
-	if( bTeleValid ) {
+	while (!bTeleValid && ++TeleAttempts < 20) {
+		// sleep for one tick, then repeat
+		sleep(0.01);
+		FindTeleportDest(LastTeleDestType);
+	}
+
+	if (bTeleValid) {
+		Pawn.Acceleration = vect(0,0,0);
+		Focus = None;
+		FinishRotation();
+		StopFiring();
+		NextTeleTimeOnStakeOut = 0;
+		NextTeleTimeOnHunt = 0;
 		default.GlobalNextTeleportTime = Level.TimeSeconds + 3.0;
 		if (bSleepOnTele) {
 			sleep(SpawnTeleportFX());
@@ -921,7 +850,6 @@ DoTele:
 		if (Pawn.SetLocation(TeleDest)) {
 			++TeleCount;
 			LastTeleportTime = Level.TimeSeconds;
-			bRateTeleportDest = true;
 			DoomMonster(Pawn).NotifyTeleport();
 		}
 		while( KFM.bShotAnim )
@@ -935,21 +863,13 @@ Next:
 
 Away:
 	bSleepOnTele = false;
-	if ( FindTeleportDest(false, false) ) {
-		GoToState(, 'DoTele');
-	}
-	else {
-		GotoState(, 'Next');
-	}
+	FindTeleportDest(TD_Far);
+	GoToState(, 'DoTele');
 
 Random:
 	bSleepOnTele = true;
-	if ( FindTeleportDest(false, false) ) {
-		GoToState(, 'DoTele');
-	}
-	else {
-		GotoState(, 'Next');
-	}
+	FindTeleportDest(TD_Random);
+	GoToState(, 'DoTele');
 }
 
 state ZombieCharge
@@ -999,5 +919,8 @@ Moving:
 
 defaultproperties
 {
-	BestDestRatio=0.69;
+	LastTeleDestType=TD_None
+	CloseTeleMinDist=250  // 5m
+	CloseTeleMaxDist=2000  // 40m
+	FarTeleMinSq=62500  // 50m
 }

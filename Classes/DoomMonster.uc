@@ -132,21 +132,6 @@ function PlayChallengeSound()
 
 function NotifyTeleport()
 {
-	local Doom3Controller D3C;
-	local KFPawn P;
-	local int c;
-
-	// if monster see players, then rate teleportation spot, except when all monsters are spawned
-	// already, i.e. players are probably moving to the trader
-	D3C = Doom3Controller(Controller);
-	if ( D3C != none && D3C.LastTeleportedTo != none && KFGameType(Level.Game).TotalMaxMonsters > 0) {
-		foreach VisibleCollidingActors(class'KFMod.KFPawn', P, 1000) {
-			c++;
-		}
-		if ( c > 0 )
-			D3C.IncLastTeleportDestRaiting(0.05, true);
-	}
-
 	if( HasAnim('Teleport') ) {
 		PrepareStillAttack(None);
 		SetAnimAction('Teleport');
@@ -508,19 +493,10 @@ simulated function Destroyed()
 
 function Died(Controller Killer, class<DamageType> damageType, vector HitLocation)
 {
-	local Doom3Controller D3C;
-
 	if( SpawnFactory!=None )
 	{
 		SpawnFactory.NotifyMobDied();
 		SpawnFactory = None;
-	}
-
-	D3C = Doom3Controller(Controller);
-	if ( D3C != none ) {
-		if ( D3C.bRateTeleportDest && Level.TimeSeconds <= D3C.LastTeleportTime + 5 ) {
-			D3C.IncLastTeleportDestRaiting(-0.2); // killed soon after teleportation
-		}
 	}
 
 	if( MonsterMaster!=None ) {
@@ -1100,11 +1076,6 @@ function TakeDamage(int Damage, Pawn instigatedBy, Vector hitlocation, Vector mo
 		if (bIsFireDamage)
 			BurnedDamage += Damage;
 	} // end of if (KFDamType != none)
-	else {
-		// mark spot as bad, if monster took environmental damage
-		if ( D3C != none && Level.TimeSeconds < D3C.LastTeleportTime + 10 )
-			D3C.IncLastTeleportDestRaiting(-0.5);
-	}
 
 	if (DamType != none && D3C != none && LastDamagedBy != none && LastDamagedBy.IsPlayerPawn()
 			&& LastDamagedBy.Controller != none)
