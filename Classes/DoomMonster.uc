@@ -1437,7 +1437,7 @@ defaultproperties
 	TransientSoundVolume=1.700000
 
 	ZapThreshold=0.50
-	ZappedDamageMod=1.25
+	ZappedDamageMod=1.5
 
 	MaxMeleeAttacks=3
 	FireRootBone="chest"

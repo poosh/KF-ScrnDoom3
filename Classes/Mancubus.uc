@@ -229,4 +229,5 @@ defaultproperties
 	Mass=5000.000000
 	MaxMeleeAttacks=5
 	ZapThreshold=1.750000
+	ZappedDamageMod=1.25
 }

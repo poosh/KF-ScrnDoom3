@@ -26,6 +26,7 @@ defaultproperties
 	ControllerClass=Class'ScrnDoom3KF.DoomBossAI'
 	CrispUpThreshhold=1
 	ZapThreshold=5
+	ZappedDamageMod=1.25
 	PlayerCountHealthScale=0.75
 	ScoringValue=750
 	OriginalScoringValue=750

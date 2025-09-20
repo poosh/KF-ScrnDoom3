@@ -492,5 +492,6 @@ defaultproperties
 	Mass=3000.000000
 	MaxMeleeAttacks=3
 	ZapThreshold=3
+	ZappedDamageMod=1.5
 	RootBone="Hips"
 }
