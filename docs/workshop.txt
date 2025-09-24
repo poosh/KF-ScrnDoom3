@@ -1,5 +1,5 @@
 This mutator brings Marco's DooM 3 monsters up-to-date.
-Version [b]9.72.07[/b].
+Version [b]9.73[/b].
 
 Major changes:
 [list]

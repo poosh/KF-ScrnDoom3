@@ -366,26 +366,6 @@ static function bool TestSpot( LevelInfo Map, out VolumeColTester T, vector P, c
 	return T.SetLocation(P);
 }
 
-// TODO: Switch to the ScrnF function
-static final function int GetAlivePlayers(GameInfo Game, out array<PlayerController> Players) {
-    local Controller C;
-    local int i;
-
-    // The below lines produces a NULL access warning if called client-side to indicate that
-    // the function must be called server-side only.
-    Players.length = Game.NumPlayers;
-    for (C = Game.Level.ControllerList; C != none; C = C.nextController) {
-        if (C.bIsPlayer && C.Pawn != none && C.Pawn.Health > 0) {
-            Players[i] = PlayerController(C);
-            if (Players[i] != none) {
-                ++i;
-            }
-        }
-    }
-    Players.length = i;
-    return i;
-}
-
 //returns navigation point close to a player
 function PickCloseTeleportDest()
 {
@@ -394,7 +374,7 @@ function PickCloseTeleportDest()
 	local PathNode N;
 	local float MinDistSq;
 
-	if (GetAlivePlayers(Level.Game, Players) == 0)
+	if (class'ScrnF'.static.GetAlivePlayers(Level.Game, Players) == 0)
 		return;  // wtf?
 
 	Player = Players[rand(Players.length)];
@@ -417,7 +397,7 @@ function NavigationPoint FindFarTeleportDest()
 	local int i, c;
 	local float MinDistSq, DistSq, BestDistSq;
 
-	if (GetAlivePlayers(Level.Game, Players) == 0)
+	if (class'ScrnF'.static.GetAlivePlayers(Level.Game, Players) == 0)
 		return FindRandomDest();  // wtf?
 
 	while (++c <= 20) {

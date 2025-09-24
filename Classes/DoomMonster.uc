@@ -1412,7 +1412,7 @@ defaultproperties
 	BurnAnimTime=1.000000
 	BurnSpeed=1
 	FadingBurnMaterial=Texture'2009DoomMonstersTex.Symbols.DoomFire'
-    BurnEffect=Class'DoomMonsterFlame'
+	BurnEffect=Class'ScrnMonsterFlame'
 	BurnDuration=8
 	BurnInCount=2
 	MinHeadShotDamageMult=1.5
